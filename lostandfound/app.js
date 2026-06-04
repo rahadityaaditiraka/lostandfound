@@ -1274,6 +1274,10 @@ function initClaimPage() {
 }
 
 function claimTab(tab) {
+  if (tab === 'history' && !adminLoggedIn) {
+    showToast('Silakan login Admin terlebih dahulu', 'bg-red-500');
+    return;
+  }
   document.getElementById('claim-tab-track').classList.toggle('hidden',   tab!=='track');
   document.getElementById('claim-tab-new').classList.toggle('hidden',     tab!=='new');
   document.getElementById('claim-tab-history').classList.toggle('hidden', tab!=='history');
@@ -1589,9 +1593,17 @@ function setAdminNav(loggedIn) {
   ['nav-all', 'nav-disposal'].forEach(id => {
     document.getElementById(id).classList.toggle('hidden', !loggedIn);
   });
-  // Ganti tombol Admin: tampilkan nama user jika login
-  const navAdmin = document.getElementById('nav-admin');
-  navAdmin.textContent = loggedIn ? '⚙️ Admin ✓' : '⚙️ Admin';
+  // Tab Riwayat di modul Pengambilan
+  document.getElementById('tab-history').classList.toggle('hidden', !loggedIn);
+  // Jika logout dan sedang di tab history, pindah ke tab track
+  if (!loggedIn) {
+    const historyTab = document.getElementById('claim-tab-history');
+    if (historyTab && !historyTab.classList.contains('hidden')) {
+      claimTab('track');
+    }
+  }
+  // Ganti label tombol Admin
+  document.getElementById('nav-admin').textContent = loggedIn ? '⚙️ Admin ✓' : '⚙️ Admin';
 }
 
 function adminLogin() {
