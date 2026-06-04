@@ -63,8 +63,8 @@
             <p class="text-red-100 text-sm">Daftar barang yang dilaporkan hilang. Bantu temukan pemiliknya!</p>
             <div id="lost-stat" class="text-red-100 text-xs mt-2"></div>
           </div>
-          <button onclick="requireLogin(()=>openReportModal('lost'))"
-            class="btn-report-lost bg-white text-red-600 hover:bg-red-50 font-bold px-4 py-2.5 rounded-xl text-sm transition flex-shrink-0 ml-4 hidden">
+          <button onclick="openReportModal('lost')"
+            class="bg-white text-red-600 hover:bg-red-50 font-bold px-4 py-2.5 rounded-xl text-sm transition flex-shrink-0 ml-4">
             + Laporkan Hilang
           </button>
         </div>
@@ -78,7 +78,7 @@
               <p class="text-gray-400 text-xs">Senin – Minggu · 10.00 – 17.00 WIB</p>
             </div>
           </div>
-          <p class="text-gray-500 text-xs mb-3">Hubungi petugas kami untuk bantuan pengambilan barang.</p>
+          <p class="text-gray-500 text-xs mb-3">Jika Anda menemukan barang, segera laporkan kepada petugas kami!</p>
           <div class="flex flex-col gap-2">
             <a href="tel:+6281234567890"
               class="inline-flex items-center justify-center gap-1.5 border border-gray-200 hover:bg-gray-50 text-gray-700 text-xs font-semibold px-3 py-2 rounded-xl transition">
@@ -740,7 +740,13 @@
                 <button type="button" onclick="removePhoto(event)" class="text-xs text-red-500 hover:underline">Hapus foto</button>
               </div>
             </div>
-            <input type="file" id="item-photo" accept="image/*" class="hidden" onchange="handlePhotoSelect(event)" />
+            <input type="file" id="item-photo" accept=".jpg,.jpeg,.png" class="hidden" onchange="handlePhotoSelect(event)" />
+          </div>
+
+          <!-- reCAPTCHA -->
+          <div class="flex justify-center my-2">
+            <div id="recaptcha-report" class="g-recaptcha"
+              data-sitekey="6LeqXwwtAAAAAGlIOjJJ7iiU7DCNhTcPbM6XbqKL"></div>
           </div>
 
           <button type="submit" id="report-submit-btn"
@@ -955,7 +961,7 @@
             ondragover="event.preventDefault(); this.classList.add('border-indigo-400','bg-indigo-50')"
             ondragleave="this.classList.remove('border-indigo-400','bg-indigo-50')"
             ondrop="handleResolveDrop(event)">
-            <input type="file" id="resolve-photo-input" accept="image/*" class="hidden" onchange="handleResolveFile(this.files[0])" />
+            <input type="file" id="resolve-photo-input" accept=".jpg,.jpeg,.png" class="hidden" onchange="handleResolveFile(this.files[0])" />
             <div id="resolve-drop-ph">
               <div class="text-3xl mb-1">📷</div>
               <p class="text-sm text-gray-500">Klik atau seret foto ke sini</p>
@@ -1087,7 +1093,7 @@
             ondragover="event.preventDefault(); this.classList.add('border-orange-400','bg-orange-50')"
             ondragleave="this.classList.remove('border-orange-400','bg-orange-50')"
             ondrop="handleDisposalDrop(event)">
-            <input type="file" id="disposal-photo-input" accept="image/*" class="hidden" onchange="handleDisposalFile(this.files[0])" />
+            <input type="file" id="disposal-photo-input" accept=".jpg,.jpeg,.png" class="hidden" onchange="handleDisposalFile(this.files[0])" />
             <div id="disposal-drop-ph">
               <div class="text-3xl mb-1">📷</div>
               <p class="text-sm text-gray-500">Klik atau seret foto ke sini</p>
@@ -1147,7 +1153,7 @@
         ondragover="event.preventDefault(); this.classList.add('border-green-400','bg-green-50')"
         ondragleave="this.classList.remove('border-green-400','bg-green-50')"
         ondrop="handleBuktiDrop(event)">
-        <input type="file" id="bukti-photo-input" accept="image/*" class="hidden" onchange="handleBuktiFile(this.files[0])" />
+        <input type="file" id="bukti-photo-input" accept=".jpg,.jpeg,.png" class="hidden" onchange="handleBuktiFile(this.files[0])" />
         <div id="bukti-drop-placeholder">
           <div class="text-3xl mb-1">📷</div>
           <p class="text-sm text-gray-500">Klik atau seret foto ke sini</p>
@@ -1214,27 +1220,17 @@
     </div>
   </div>
 
+  <!-- Google reCAPTCHA v2 -->
+  <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+
   <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
-  <!-- Loading Screen -->
-  <div id="fb-loading" style="position:fixed;inset:0;background:#fff;z-index:99999;
-       display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;">
-    <div style="font-size:52px;">🔍</div>
-    <p style="font-size:18px;font-weight:800;color:#4f46e5;margin:0;">Lost & Found</p>
-    <p id="fb-loading-msg" style="font-size:13px;color:#9ca3af;margin:0;">Menghubungkan ke database...</p>
-    <div style="width:220px;height:5px;background:#e5e7eb;border-radius:99px;overflow:hidden;margin-top:4px;">
-      <div style="height:100%;background:#4f46e5;border-radius:99px;animation:lbar 1.4s ease-in-out infinite;"></div>
-    </div>
+  <!-- Loading Screen (hidden by default) -->
+  <div id="fb-loading" style="display:none;">
+    <p id="fb-loading-msg"></p>
   </div>
-  <style>
-    @keyframes lbar {
-      0%   { width:0%;   margin-left:0%; }
-      50%  { width:55%;  margin-left:22%; }
-      100% { width:0%;   margin-left:100%; }
-    }
-  </style>
 
   <script src="app.js"></script>
 </body>

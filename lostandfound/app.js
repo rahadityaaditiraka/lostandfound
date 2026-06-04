@@ -223,43 +223,61 @@ function updateAuthUI() {
   }
 }
 
+function launchApp() {
+  if (_appReady) return;
+  _appReady = true;
+  document.getElementById('fb-loading').style.display = 'none';
+  seedDemo();
+  applyRoleUI();
+  if (currentUserRole === 'admin') setAdminNav(true);
+  showPage('lost');
+  document.getElementById('tab-track').classList.add('active');
+  document.getElementById('atab-lost').classList.add('active');
+  document.getElementById('cf-all').classList.add('active');
+}
+
 function initFirebase() {
-  firebase.initializeApp(FIREBASE_CONFIG);
-  _db = firebase.firestore();
-
-  // Restore session dari localStorage
+  // Restore session & cache PERTAMA
   restoreSession();
-  if (currentUserRole === 'admin') {
-    adminLoggedIn = true;
+
+  const cachedItems  = localStorage.getItem('lf_items_cache');
+  const cachedClaims = localStorage.getItem('lf_claims_cache');
+  if (cachedItems)  try { _items  = JSON.parse(cachedItems);  } catch(e){}
+  if (cachedClaims) try { _claims = JSON.parse(cachedClaims); } catch(e){}
+
+  if (currentUserRole === 'admin') adminLoggedIn = true;
+
+  // Tampilkan app LANGSUNG dari cache
+  launchApp();
+
+  // Timeout paksa: 4 detik maks loading
+  setTimeout(() => launchApp(), 4000);
+
+  // Init Firebase di background
+  try {
+    firebase.initializeApp(FIREBASE_CONFIG);
+    _db = firebase.firestore();
+  } catch(e) {
+    console.error('Firebase init error:', e);
+    return;
   }
 
+  // Timeout fallback: jika Firebase lambat, app sudah jalan dari cache
   let itemsOk = false, claimsOk = false;
-  function checkReady() {
-    if (!itemsOk || !claimsOk) return;
-    _appReady = true;
-    document.getElementById('fb-loading').style.display = 'none';
-    seedDemo();
-    applyRoleUI();
-    if (currentUserRole === 'admin') { setAdminNav(true); }
-    showPage('lost');
-    document.getElementById('tab-track').classList.add('active');
-    document.getElementById('atab-lost').classList.add('active');
-    document.getElementById('cf-all').classList.add('active');
-  }
 
   _db.collection('items').onSnapshot(snap => {
     _items = snap.docs.map(d => d.data());
-    if (!itemsOk) { itemsOk = true; checkReady(); }
-    else refreshCurrentPage();
-  }, err => {
-    document.getElementById('fb-loading-msg').textContent = '❌ Gagal terhubung: ' + err.message;
-  });
+    localStorage.setItem('lf_items_cache', JSON.stringify(_items));
+    itemsOk = true;
+    if (_appReady) refreshCurrentPage();
+  }, err => console.error('items:', err));
 
   _db.collection('claims').onSnapshot(snap => {
     _claims = snap.docs.map(d => d.data());
-    if (!claimsOk) { claimsOk = true; checkReady(); }
-    else refreshCurrentPage();
-  }, err => console.error('claims listener:', err));
+    localStorage.setItem('lf_claims_cache', JSON.stringify(_claims));
+    claimsOk = true;
+    if (_appReady) refreshCurrentPage();
+  }, err => console.error('claims:', err));
 }
 
 function uid()           { return Date.now().toString(36) + Math.random().toString(36).slice(2); }
@@ -615,7 +633,7 @@ function renderCard(item, score, matched, showScore) {
   return `
     <div class="item-card bg-white rounded-2xl shadow-sm border border-gray-100 cursor-pointer hover:ring-2 ${ringColor} transition"
          onclick="openModal('${item.id}',${JSON.stringify(matched)})">
-      ${item.photo ? `
+      ${item.photo && currentUserRole !== 'guest' ? `
         <div style="height:140px;overflow:hidden;border-radius:16px 16px 0 0;">
           <img src="${item.photo}" alt="foto"
             style="width:100%;height:100%;object-fit:cover;display:block;" />
@@ -777,7 +795,7 @@ function openModal(id, matched) {
   // Simpan foto di variabel global agar bisa diakses tombol tanpa embed base64 di HTML
   window._curPhoto = item.photo || null;
 
-  const photoHtml = item.photo ? `
+  const photoHtml = item.photo ? (currentUserRole !== 'guest' ? `
     <div style="background:#f8fafc;border-bottom:2px solid #e2e8f0;">
       <p style="font-size:11px;font-weight:700;color:#64748b;margin:0;padding:10px 12px 6px;text-transform:uppercase;letter-spacing:0.06em;">📷 Foto Barang</p>
       <div style="height:200px;overflow:hidden;position:relative;">
@@ -788,7 +806,7 @@ function openModal(id, matched) {
           color:rgba(255,255,255,0.85);font-size:10px;font-weight:600;pointer-events:none;
           letter-spacing:0.04em;">Tekan "Lihat Barang" untuk tampilan lengkap</span>
       </div>
-    </div>` : '';
+    </div>` : '') : '';
   const photoBtnHtml = '';
 
   // Claim section for found items
@@ -836,7 +854,7 @@ function openModal(id, matched) {
           <p class="text-xs text-gray-400 mt-0.5">Pelapor: ${escapeHtml(partner.reporter)} · ${escapeHtml(partner.contact)}</p>
         </div>`;
     }
-  } else if (item.status !== 'resolved') {
+  } else if (item.status !== 'resolved' && currentUserRole !== 'guest') {
     const candidates = findMatches(item);
     window._lastCandidates = candidates;
     if (candidates.length > 0) {
@@ -1254,8 +1272,8 @@ function closeResolveModal(e) {
 }
 
 function handleResolveFile(file) {
-  if (!file || !file.type.startsWith('image/')) return;
-  if (file.size > 8 * 1024 * 1024) { showToast('Foto terlalu besar (maks 8 MB)', 'bg-red-500'); return; }
+  if (!file || !isValidImage(file)) { showToast('Format tidak didukung. Gunakan JPG atau PNG.','bg-red-500'); return; }
+  if (file.size > 5 * 1024 * 1024) { showToast('Foto terlalu besar (maks 5 MB)', 'bg-red-500'); return; }
   const reader = new FileReader();
   reader.onload = async e => {
     resolvePhotoData = await compressPhoto(e.target.result);
@@ -1330,6 +1348,19 @@ function openReportModal(type) {
     `w-full font-semibold py-3 rounded-xl transition text-sm text-white ${accent}`;
   document.getElementById('item-date').valueAsDate = new Date();
   document.getElementById('report-modal-overlay').classList.remove('hidden');
+
+  // Render reCAPTCHA widget
+  setTimeout(() => {
+    if (typeof grecaptcha === 'undefined') return;
+    const container = document.getElementById('recaptcha-report');
+    if (container && !container.hasChildNodes()) {
+      window._recaptchaReportId = grecaptcha.render('recaptcha-report', {
+        sitekey: '6LeqXwwtAAAAAGlIOjJJ7iiU7DCNhTcPbM6XbqKL'
+      });
+    } else if (container) {
+      grecaptcha.reset(window._recaptchaReportId);
+    }
+  }, 300);
 }
 
 function closeReportModal(e) {
@@ -1341,6 +1372,16 @@ function closeReportModal(e) {
 
 function submitReport(e) {
   e.preventDefault();
+
+  // Validasi reCAPTCHA
+  const recaptchaResponse = typeof grecaptcha !== 'undefined'
+    ? grecaptcha.getResponse(window._recaptchaReportId)
+    : 'skip';
+  if (!recaptchaResponse) {
+    showToast('Harap selesaikan verifikasi reCAPTCHA', 'bg-red-500');
+    return;
+  }
+
   const type   = document.getElementById('report-type').value;
   const itemId = uid();
   const item = {
@@ -1359,6 +1400,8 @@ function submitReport(e) {
   const items = getItems(); items.unshift(item); saveItems(items);
   document.getElementById('report-form').reset();
   resetPhotoField();
+  // Reset reCAPTCHA
+  if (typeof grecaptcha !== 'undefined') grecaptcha.reset(window._recaptchaReportId);
   document.getElementById('report-modal-overlay').classList.add('hidden');
   showToast('Laporan berhasil disimpan! ✅', 'bg-green-600');
   renderItemPage(type);
@@ -1377,7 +1420,15 @@ function handlePhotoDrop(e) {
   const f = e.dataTransfer.files[0];
   if (f && f.type.startsWith('image/')) loadPhoto(f);
 }
+function isValidImage(file) {
+  const allowedTypes = ['image/jpeg','image/jpg','image/png'];
+  const allowedExts = ['.jpg','.jpeg','.png'];
+  const ext = '.' + file.name.split('.').pop().toLowerCase();
+  return allowedTypes.includes(file.type) && allowedExts.includes(ext);
+}
+
 function loadPhoto(file) {
+  if (!isValidImage(file)) { showToast('Format tidak didukung. Gunakan JPG atau PNG.','bg-red-500'); return; }
   if (file.size > 5*1024*1024) { showToast('Ukuran foto maks 5 MB.','bg-red-500'); return; }
   pendingPhotoFile = file;
   const reader = new FileReader();
@@ -2105,8 +2156,8 @@ function closeBuktiModal(e) {
 }
 
 function handleBuktiFile(file) {
-  if (!file || !file.type.startsWith('image/')) return;
-  if (file.size > 8 * 1024 * 1024) { showToast('Foto terlalu besar (maks 8 MB)','bg-red-500'); return; }
+  if (!file || !isValidImage(file)) { showToast('Format tidak didukung. Gunakan JPG atau PNG.','bg-red-500'); return; }
+  if (file.size > 5 * 1024 * 1024) { showToast('Foto terlalu besar (maks 5 MB)','bg-red-500'); return; }
   const reader = new FileReader();
   reader.onload = async e => {
     buktiPhotoData = await compressPhoto(e.target.result);
@@ -2643,8 +2694,8 @@ function onDisposalTypeChange() {
 }
 
 function handleDisposalFile(file) {
-  if (!file || !file.type.startsWith('image/')) return;
-  if (file.size > 8 * 1024 * 1024) { showToast('Foto terlalu besar (maks 8 MB)','bg-red-500'); return; }
+  if (!file || !isValidImage(file)) { showToast('Format tidak didukung. Gunakan JPG atau PNG.','bg-red-500'); return; }
+  if (file.size > 5 * 1024 * 1024) { showToast('Foto terlalu besar (maks 5 MB)','bg-red-500'); return; }
   const reader = new FileReader();
   reader.onload = async e => {
     disposalPhotoData = await compressPhoto(e.target.result);
