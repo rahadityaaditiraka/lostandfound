@@ -648,6 +648,15 @@ function renderCard(item, score, matched, showScore) {
         <div class="flex items-center gap-1 text-xs text-gray-400"><span>📍</span><span>${escapeHtml(item.location)}</span></div>
         <div class="text-xs text-gray-400 mt-0.5">🏷️ ${escapeHtml(item.category)}</div>
         ${scoreBar}
+        ${item.status === 'open' && currentUserRole !== 'guest' ? (() => {
+          const matches = findMatches(item);
+          return matches.length > 0
+            ? `<div class="mt-2 flex items-center gap-1.5 bg-indigo-50 border border-indigo-200 rounded-lg px-2.5 py-1.5">
+                <span class="text-xs">🔍</span>
+                <span class="text-xs font-semibold text-indigo-600">${matches.length} kandidat cocok — klik untuk lihat</span>
+               </div>`
+            : '';
+        })() : ''}
       </div>
     </div>`;
 }
@@ -657,10 +666,56 @@ function renderCard(item, score, matched, showScore) {
 // ============================================================
 
 // ============================================================
-// IMAGE SIMILARITY — Perceptual Hash (pHash)
+// IMAGE SIMILARITY — TensorFlow.js + MobileNet
 // ============================================================
+let _mobileNet = null;
+let _tfReady    = false;
 
-// Hitung pHash dari dataURL gambar → array 64 bit
+// Load model MobileNet di background saat app start
+async function loadMobileNet() {
+  try {
+    if (typeof mobilenet === 'undefined' || typeof tf === 'undefined') return;
+    _mobileNet = await mobilenet.load({ version: 2, alpha: 0.5 });
+    _tfReady = true;
+    console.log('MobileNet loaded ✅');
+  } catch(e) {
+    console.warn('MobileNet gagal load:', e);
+  }
+}
+
+// Ekstrak fitur dari gambar → Float32Array
+async function extractFeatures(src) {
+  if (!src || !_tfReady || !_mobileNet) return null;
+  return new Promise(resolve => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = async () => {
+      try {
+        const features = await _mobileNet.infer(img, true);
+        const data = await features.data();
+        features.dispose();
+        resolve(data);
+      } catch { resolve(null); }
+    };
+    img.onerror = () => resolve(null);
+    img.src = src;
+  });
+}
+
+// Cosine similarity antara dua vektor fitur → 0.0 – 1.0
+function cosineSimilarity(a, b) {
+  if (!a || !b || a.length !== b.length) return null;
+  let dot = 0, normA = 0, normB = 0;
+  for (let i = 0; i < a.length; i++) {
+    dot   += a[i] * b[i];
+    normA += a[i] * a[i];
+    normB += b[i] * b[i];
+  }
+  const denom = Math.sqrt(normA) * Math.sqrt(normB);
+  return denom === 0 ? 0 : dot / denom;
+}
+
+// Fallback: pHash jika MobileNet belum siap
 function computeImageHash(src) {
   return new Promise(resolve => {
     if (!src) return resolve(null);
@@ -668,15 +723,14 @@ function computeImageHash(src) {
     img.onload = () => {
       try {
         const canvas = document.createElement('canvas');
-        canvas.width = 8; canvas.height = 8;
+        canvas.width = 16; canvas.height = 16;
         const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0, 8, 8);
-        const data = ctx.getImageData(0, 0, 8, 8).data;
+        ctx.drawImage(img, 0, 0, 16, 16);
+        const data = ctx.getImageData(0, 0, 16, 16).data;
         const grays = [];
-        for (let i = 0; i < data.length; i += 4) {
-          grays.push(0.299 * data[i] + 0.587 * data[i+1] + 0.114 * data[i+2]);
-        }
-        const avg = grays.reduce((a,b) => a+b, 0) / grays.length;
+        for (let i = 0; i < data.length; i += 4)
+          grays.push(0.299*data[i] + 0.587*data[i+1] + 0.114*data[i+2]);
+        const avg = grays.reduce((a,b)=>a+b,0)/grays.length;
         resolve(grays.map(g => g >= avg ? 1 : 0));
       } catch { resolve(null); }
     };
@@ -685,7 +739,6 @@ function computeImageHash(src) {
   });
 }
 
-// Hitung kemiripan antara dua hash → 0.0 – 1.0
 function imageHashSimilarity(h1, h2) {
   if (!h1 || !h2 || h1.length !== h2.length) return null;
   let same = 0;
@@ -696,14 +749,29 @@ function imageHashSimilarity(h1, h2) {
 // Update tampilan image similarity di candidate card
 async function updateImageSimilarity(itemSrc, candidates) {
   if (!itemSrc) return;
-  const itemHash = await computeImageHash(itemSrc);
-  if (!itemHash) return;
+
+  // Gunakan MobileNet jika siap, fallback ke pHash
+  let simFn, itemFeature;
+  if (_tfReady && _mobileNet) {
+    itemFeature = await extractFeatures(itemSrc);
+    simFn = async (candSrc) => {
+      const f = await extractFeatures(candSrc);
+      const s = cosineSimilarity(itemFeature, f);
+      return s === null ? null : s;
+    };
+  } else {
+    itemFeature = await computeImageHash(itemSrc);
+    simFn = async (candSrc) => {
+      const h = await computeImageHash(candSrc);
+      return imageHashSimilarity(itemFeature, h);
+    };
+  }
+  if (!itemFeature) return;
 
   for (const r of candidates) {
     if (!r.item.photo) continue;
-    const candHash = await computeImageHash(r.item.photo);
-    if (!candHash) continue;
-    const simScore = imageHashSimilarity(itemHash, candHash);
+    const simScore = await simFn(r.item.photo);
+    if (simScore === null) continue;
     const pct = Math.round(simScore * 100);
 
     const el = document.getElementById(`img-sim-${r.item.id}`);
@@ -740,7 +808,7 @@ function findMatches(item, maxResults = 3) {
       const symMatched = [...new Set([...scoreAB.matched, ...scoreBA.matched])];
       return { item: candidate, score: symScore, matched: symMatched };
     })
-    .filter(r => r.score > 0.12)
+    .filter(r => r.score > 0.05)
     .sort((a, b) => b.score - a.score)
     .slice(0, maxResults);
 }
@@ -1142,8 +1210,8 @@ function openVerifyModal(itemId) {
   document.getElementById('verify-item-label').innerHTML =
     `<span class="${item.type==='lost'?'text-red-600':'text-green-600'}">${typeLabel}</span> · <span class="text-gray-800">${escapeHtml(item.name)}</span>`;
 
-  // Cek apakah ada kandidat match
-  const candidates = findMatches(item);
+  // Cek apakah ada kandidat match — hanya untuk user & admin
+  const candidates = currentUserRole !== 'guest' ? findMatches(item) : [];
   const matchWrap  = document.getElementById('vopt-match-wrap');
   if (candidates.length > 0) {
     matchWrap.classList.remove('hidden');
@@ -1347,6 +1415,22 @@ function openReportModal(type) {
   document.getElementById('report-submit-btn').className =
     `w-full font-semibold py-3 rounded-xl transition text-sm text-white ${accent}`;
   document.getElementById('item-date').valueAsDate = new Date();
+
+  // Ubah label Nama Pelapor / Nama Penemu sesuai tipe
+  const reporterLabel = document.querySelector('label[for="reporter-name"], label:has(+ #reporter-name)');
+  const reporterInput = document.getElementById('reporter-name');
+  if (reporterInput) {
+    reporterInput.placeholder = isLost ? 'Nama kamu' : 'Nama penemu barang';
+    // Update label di atas input
+    const prev = reporterInput.previousElementSibling || reporterInput.parentElement?.querySelector('label');
+  }
+  // Cari label menggunakan querySelectorAll
+  document.querySelectorAll('label').forEach(lbl => {
+    if (lbl.textContent.trim().startsWith('Nama Pelapor') || lbl.textContent.trim().startsWith('Nama Penemu')) {
+      lbl.innerHTML = isLost ? 'Nama Pelapor *' : 'Nama Penemu *';
+    }
+  });
+
   document.getElementById('report-modal-overlay').classList.remove('hidden');
 
   // Render reCAPTCHA widget
@@ -1565,7 +1649,7 @@ function initClaimForm() {
   selectedItemId = null;
   currentClaimStep = 1;
   gotoClaimStep(1);
-  ['claim-name','claim-contact','claim-proof','claim-note','claim-search'].forEach(id => {
+  ['claim-name','claim-contact','claim-officer','claim-proof','claim-note','claim-search'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });
@@ -1660,7 +1744,9 @@ function claimNextStep(from) {
     const name    = document.getElementById('claim-name').value.trim();
     const contact = document.getElementById('claim-contact').value.trim();
     const proof   = document.getElementById('claim-proof').value.trim();
+    const officer = document.getElementById('claim-officer').value.trim();
     if (!name||!contact||!proof) { showToast('Isi semua field wajib.','bg-red-500'); return; }
+    if (!officer) { showToast('Nama petugas wajib diisi.','bg-red-500'); return; }
     if (SIG.isEmpty) { showToast('Tanda tangan wajib diisi.','bg-red-500'); return; }
     gotoClaimStep(3);
   }
@@ -1677,6 +1763,7 @@ function submitClaim() {
     id: uid(), itemId: selectedItemId,
     claimantName:    document.getElementById('claim-name').value.trim(),
     claimantContact: document.getElementById('claim-contact').value.trim(),
+    claimantOfficer: document.getElementById('claim-officer').value.trim(),
     proofDesc:       document.getElementById('claim-proof').value.trim(),
     signature:       SIG.toDataURL(),
     preferredDate: date, preferredTime: time,
@@ -2787,6 +2874,8 @@ function showToast(msg, colorClass) {
 // ============================================================
 document.addEventListener('DOMContentLoaded', () => {
   initFirebase();
+  // Load MobileNet di background
+  setTimeout(loadMobileNet, 2000);
 
   // Shortcut rahasia admin: Ctrl+Shift+A
   document.addEventListener('keydown', e => {
