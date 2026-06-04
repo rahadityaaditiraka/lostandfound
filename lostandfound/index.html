@@ -53,17 +53,44 @@
     <!-- ===== PAGE: BARANG HILANG ===== -->
     <div id="page-lost" class="page hidden">
 
-      <!-- Hero -->
-      <div class="bg-gradient-to-r from-red-500 to-red-600 rounded-2xl text-white p-6 mb-6 flex items-center justify-between">
-        <div>
-          <h1 class="text-2xl font-bold mb-1">🚨 Barang Hilang</h1>
-          <p class="text-red-100 text-sm">Daftar barang yang dilaporkan hilang. Bantu temukan pemiliknya!</p>
-          <div id="lost-stat" class="text-red-100 text-xs mt-2"></div>
+      <!-- Hero + Hubungi Kami berdampingan -->
+      <div class="flex gap-4 mb-6 flex-col md:flex-row">
+
+        <!-- Merah: Barang Hilang -->
+        <div class="bg-gradient-to-r from-red-500 to-red-600 rounded-2xl text-white p-6 flex items-center justify-between flex-1">
+          <div>
+            <h1 class="text-2xl font-bold mb-1">🚨 Barang Hilang</h1>
+            <p class="text-red-100 text-sm">Daftar barang yang dilaporkan hilang. Bantu temukan pemiliknya!</p>
+            <div id="lost-stat" class="text-red-100 text-xs mt-2"></div>
+          </div>
+          <button onclick="requireLogin(()=>openReportModal('lost'))"
+            class="btn-report-lost bg-white text-red-600 hover:bg-red-50 font-bold px-4 py-2.5 rounded-xl text-sm transition flex-shrink-0 ml-4 hidden">
+            + Laporkan Hilang
+          </button>
         </div>
-        <button onclick="requireLogin(()=>openReportModal('lost'))"
-          class="btn-report-lost bg-white text-red-600 hover:bg-red-50 font-bold px-4 py-2.5 rounded-xl text-sm transition flex-shrink-0 ml-4 hidden">
-          + Laporkan Hilang
-        </button>
+
+        <!-- Putih: Hubungi Kami -->
+        <div class="bg-white border border-gray-200 rounded-2xl shadow-sm p-5 flex flex-col justify-between md:w-72">
+          <div class="flex items-center gap-3 mb-3">
+            <div class="w-10 h-10 bg-red-50 rounded-full flex items-center justify-center text-xl flex-shrink-0">📞</div>
+            <div>
+              <p class="font-semibold text-gray-800 text-sm">Kehilangan barang?</p>
+              <p class="text-gray-400 text-xs">Senin – Minggu · 10.00 – 17.00 WIB</p>
+            </div>
+          </div>
+          <p class="text-gray-500 text-xs mb-3">Hubungi petugas kami untuk bantuan pengambilan barang.</p>
+          <div class="flex flex-col gap-2">
+            <a href="tel:+6281234567890"
+              class="inline-flex items-center justify-center gap-1.5 border border-gray-200 hover:bg-gray-50 text-gray-700 text-xs font-semibold px-3 py-2 rounded-xl transition">
+              📱 +62 812-3456-7890
+            </a>
+            <a href="https://wa.me/6281234567890" target="_blank"
+              class="inline-flex items-center justify-center gap-1.5 bg-green-500 hover:bg-green-600 text-white text-xs font-semibold px-3 py-2 rounded-xl transition">
+              💬 WhatsApp
+            </a>
+          </div>
+        </div>
+
       </div>
 
       <!-- Filter & Search -->
