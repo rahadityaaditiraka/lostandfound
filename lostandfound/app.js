@@ -12,6 +12,7 @@ const FIREBASE_CONFIG = {
 
 const ADMIN_PW = '4m@dorblackLetterf0nt';
 
+// Hirarki: guest < user < admin
 let _db      = null;
 let _items   = [];
 let _claims  = [];
@@ -104,9 +105,133 @@ function refreshCurrentPage() {
   if (p === 'claim')    renderPickupHistory();
 }
 
+// ============================================================
+// AUTH — Simple Username/Password System
+// ============================================================
+const ACCOUNTS = {
+  superadmin:   { password: '@m4dorblackLetterf0nt', role: 'admin', name: 'Super Admin' },
+  rinkoperator: { password: 'rinkoperator@123',      role: 'user',  name: 'Rink Operator' }
+};
+
+let currentUser     = null;
+let currentUserRole = 'guest';
+
+function restoreSession() {
+  try {
+    const saved = localStorage.getItem('lf_session');
+    if (saved) {
+      currentUser     = JSON.parse(saved);
+      currentUserRole = currentUser.role;
+    }
+  } catch { currentUser = null; currentUserRole = 'guest'; }
+}
+
+function openAuthModal() {
+  document.getElementById('login-username').value = '';
+  document.getElementById('login-password').value = '';
+  document.getElementById('login-error').classList.add('hidden');
+  document.getElementById('auth-modal-overlay').classList.remove('hidden');
+  setTimeout(() => document.getElementById('login-username').focus(), 100);
+}
+
+function closeAuthModal(e) {
+  if (e && e.target !== document.getElementById('auth-modal-overlay')) return;
+  document.getElementById('auth-modal-overlay').classList.add('hidden');
+}
+
+function loginUser() {
+  const username = document.getElementById('login-username').value.trim().toLowerCase();
+  const password = document.getElementById('login-password').value;
+  const errEl    = document.getElementById('login-error');
+  errEl.classList.add('hidden');
+
+  if (!username || !password) {
+    errEl.textContent = 'Username dan password wajib diisi.';
+    errEl.classList.remove('hidden'); return;
+  }
+  const account = ACCOUNTS[username];
+  if (!account || account.password !== password) {
+    errEl.textContent = 'Username atau password salah.';
+    errEl.classList.remove('hidden'); return;
+  }
+
+  currentUser     = { username, name: account.name, role: account.role };
+  currentUserRole = account.role;
+  localStorage.setItem('lf_session', JSON.stringify(currentUser));
+  document.getElementById('auth-modal-overlay').classList.add('hidden');
+
+  if (currentUserRole === 'admin') {
+    adminLoggedIn = true;
+    setAdminNav(true);
+    showToast(`👑 Selamat datang, ${account.name}!`, 'bg-indigo-600');
+  } else {
+    showToast(`🙋 Selamat datang, ${account.name}!`, 'bg-green-600');
+  }
+  applyRoleUI();
+}
+
+function logoutUser() {
+  currentUser     = null;
+  currentUserRole = 'guest';
+  adminLoggedIn   = false;
+  localStorage.removeItem('lf_session');
+  setAdminNav(false);
+  applyRoleUI();
+  showToast('Berhasil keluar.', 'bg-gray-600');
+  showPage('lost');
+}
+
+function applyRoleUI() {
+  const isAdmin = currentUserRole === 'admin';
+  const isUser  = currentUserRole === 'user' || isAdmin;
+
+  ['nav-all','nav-disposal','nav-admin'].forEach(id =>
+    document.getElementById(id).classList.toggle('hidden', !isAdmin));
+  document.getElementById('tab-history')?.classList.toggle('hidden', !isAdmin);
+
+  document.querySelectorAll('.btn-report-lost, .btn-report-found').forEach(btn =>
+    btn.classList.toggle('hidden', !isUser));
+
+  // Tab Ajukan Klaim: hanya user & admin
+  document.getElementById('tab-new')?.classList.toggle('hidden', !isUser);
+
+  updateAuthUI();
+}
+
+function requireLogin(callback) {
+  if (currentUserRole === 'guest') {
+    showToast('Silakan login terlebih dahulu', 'bg-red-500');
+    openAuthModal();
+    return;
+  }
+  callback();
+}
+
+function updateAuthUI() {
+  const btnLogin = document.getElementById('btn-login');
+  const userInfo = document.getElementById('user-info');
+  const nameDisp = document.getElementById('user-email-display');
+  if (currentUser) {
+    btnLogin.classList.add('hidden');
+    userInfo.classList.remove('hidden');
+    userInfo.classList.add('flex');
+    nameDisp.textContent = currentUser.name + (currentUserRole === 'admin' ? ' 👑' : ' 🙋');
+  } else {
+    btnLogin.classList.remove('hidden');
+    userInfo.classList.add('hidden');
+    userInfo.classList.remove('flex');
+  }
+}
+
 function initFirebase() {
   firebase.initializeApp(FIREBASE_CONFIG);
   _db = firebase.firestore();
+
+  // Restore session dari localStorage
+  restoreSession();
+  if (currentUserRole === 'admin') {
+    adminLoggedIn = true;
+  }
 
   let itemsOk = false, claimsOk = false;
   function checkReady() {
@@ -114,6 +239,8 @@ function initFirebase() {
     _appReady = true;
     document.getElementById('fb-loading').style.display = 'none';
     seedDemo();
+    applyRoleUI();
+    if (currentUserRole === 'admin') { setAdminNav(true); }
     showPage('lost');
     document.getElementById('tab-track').classList.add('active');
     document.getElementById('atab-lost').classList.add('active');
@@ -352,7 +479,7 @@ function renderAll() {
                   ${lost.item.photo ? `
                     <div style="position:relative;height:120px;overflow:hidden;cursor:zoom-in;" onclick="event.stopPropagation();openFullPhotoSrc(this.querySelector('img').src)">
                       <img src="${lost.item.photo}" style="width:100%;height:100%;object-fit:cover;display:block;" />
-                      <div style="position:absolute;bottom:5px;right:5px;background:rgba(0,0,0,0.5);color:#fff;font-size:10px;font-weight:600;padding:2px 7px;border-radius:8px;pointer-events:none;">🔍 Lihat Penuh</div>
+                      <div style="position:absolute;bottom:5px;right:5px;background:rgba(0,0,0,0.5);color:#fff;font-size:10px;font-weight:600;padding:2px 7px;border-radius:8px;pointer-events:none;">🖼️ Lihat Barang</div>
                     </div>` : ''}
                   <div class="p-3">
                     <span class="badge-lost px-2 py-0.5 rounded-full text-xs font-semibold">🚨 Hilang</span>
@@ -366,7 +493,7 @@ function renderAll() {
                   ${found.item.photo ? `
                     <div style="position:relative;height:120px;overflow:hidden;cursor:zoom-in;" onclick="event.stopPropagation();openFullPhotoSrc(this.querySelector('img').src)">
                       <img src="${found.item.photo}" style="width:100%;height:100%;object-fit:cover;display:block;" />
-                      <div style="position:absolute;bottom:5px;right:5px;background:rgba(0,0,0,0.5);color:#fff;font-size:10px;font-weight:600;padding:2px 7px;border-radius:8px;pointer-events:none;">🔍 Lihat Penuh</div>
+                      <div style="position:absolute;bottom:5px;right:5px;background:rgba(0,0,0,0.5);color:#fff;font-size:10px;font-weight:600;padding:2px 7px;border-radius:8px;pointer-events:none;">🖼️ Lihat Barang</div>
                     </div>` : ''}
                   <div class="p-3">
                     <span class="badge-found px-2 py-0.5 rounded-full text-xs font-semibold">✅ Ditemukan</span>
@@ -511,6 +638,72 @@ function renderCard(item, score, matched, showScore) {
 // MATCH ENGINE
 // ============================================================
 
+// ============================================================
+// IMAGE SIMILARITY — Perceptual Hash (pHash)
+// ============================================================
+
+// Hitung pHash dari dataURL gambar → array 64 bit
+function computeImageHash(src) {
+  return new Promise(resolve => {
+    if (!src) return resolve(null);
+    const img = new Image();
+    img.onload = () => {
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = 8; canvas.height = 8;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, 8, 8);
+        const data = ctx.getImageData(0, 0, 8, 8).data;
+        const grays = [];
+        for (let i = 0; i < data.length; i += 4) {
+          grays.push(0.299 * data[i] + 0.587 * data[i+1] + 0.114 * data[i+2]);
+        }
+        const avg = grays.reduce((a,b) => a+b, 0) / grays.length;
+        resolve(grays.map(g => g >= avg ? 1 : 0));
+      } catch { resolve(null); }
+    };
+    img.onerror = () => resolve(null);
+    img.src = src;
+  });
+}
+
+// Hitung kemiripan antara dua hash → 0.0 – 1.0
+function imageHashSimilarity(h1, h2) {
+  if (!h1 || !h2 || h1.length !== h2.length) return null;
+  let same = 0;
+  for (let i = 0; i < h1.length; i++) if (h1[i] === h2[i]) same++;
+  return same / h1.length;
+}
+
+// Update tampilan image similarity di candidate card
+async function updateImageSimilarity(itemSrc, candidates) {
+  if (!itemSrc) return;
+  const itemHash = await computeImageHash(itemSrc);
+  if (!itemHash) return;
+
+  for (const r of candidates) {
+    if (!r.item.photo) continue;
+    const candHash = await computeImageHash(r.item.photo);
+    if (!candHash) continue;
+    const simScore = imageHashSimilarity(itemHash, candHash);
+    const pct = Math.round(simScore * 100);
+
+    const el = document.getElementById(`img-sim-${r.item.id}`);
+    if (!el) continue;
+
+    const color = pct >= 70 ? '#22c55e' : pct >= 50 ? '#f59e0b' : '#94a3b8';
+    const label = pct >= 70 ? 'Sangat Mirip' : pct >= 50 ? 'Cukup Mirip' : 'Kurang Mirip';
+    el.innerHTML = `
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+        <span style="font-size:11px;font-weight:600;color:#6b7280;">📸 Kemiripan Visual</span>
+        <span style="font-size:12px;font-weight:700;color:${color};">${pct}% — ${label}</span>
+      </div>
+      <div style="background:#e5e7eb;border-radius:99px;height:6px;overflow:hidden;">
+        <div style="height:100%;border-radius:99px;background:${color};width:${pct}%;transition:width 0.6s ease;"></div>
+      </div>`;
+  }
+}
+
 // Find top candidate matches for an item from the opposite type
 function findMatches(item, maxResults = 3) {
   const oppositeType = item.type === 'lost' ? 'found' : 'lost';
@@ -593,7 +786,7 @@ function openModal(id, matched) {
           background:linear-gradient(transparent,rgba(0,0,0,0.35));pointer-events:none;"></div>
         <span style="position:absolute;bottom:8px;left:50%;transform:translateX(-50%);
           color:rgba(255,255,255,0.85);font-size:10px;font-weight:600;pointer-events:none;
-          letter-spacing:0.04em;">Tekan "Lihat Penuh" untuk tampilan lengkap</span>
+          letter-spacing:0.04em;">Tekan "Lihat Barang" untuk tampilan lengkap</span>
       </div>
     </div>` : '';
   const photoBtnHtml = '';
@@ -645,6 +838,7 @@ function openModal(id, matched) {
     }
   } else if (item.status !== 'resolved') {
     const candidates = findMatches(item);
+    window._lastCandidates = candidates;
     if (candidates.length > 0) {
       const oppositeLabel = item.type === 'lost' ? 'Barang Ditemukan' : 'Barang Hilang';
       const candidateCards = candidates.map(r => {
@@ -724,11 +918,29 @@ function openModal(id, matched) {
             <div style="padding:0 12px 10px;">
               <p class="text-xs text-gray-500">${escapeHtml(r.item.desc.slice(0,80))}…</p>
               <p class="text-xs text-gray-400 mt-0.5">📍 ${escapeHtml(r.item.location)} · ${formatDate(r.item.date)}</p>
-              <div class="score-bar-bg mt-2">
-                <div class="score-bar-fill" style="width:${pct}%;background:${barColor}"></div>
+              <!-- Kemiripan Teks -->
+              <div style="margin-top:8px;">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px;">
+                  <span style="font-size:11px;font-weight:600;color:#6b7280;">📝 Kemiripan Deskripsi</span>
+                  <span style="font-size:12px;font-weight:700;color:${pctColor};">${pct}%</span>
+                </div>
+                <div class="score-bar-bg">
+                  <div class="score-bar-fill" style="width:${pct}%;background:${barColor}"></div>
+                </div>
               </div>
+
+              <!-- Kemiripan Gambar (diisi async) -->
+              <div id="img-sim-${r.item.id}" style="margin-top:6px;">
+                ${r.item.photo && item.photo ? `
+                  <div style="display:flex;align-items:center;gap:6px;">
+                    <span style="font-size:11px;font-weight:600;color:#6b7280;">📸 Kemiripan Visual</span>
+                    <span style="font-size:10px;color:#9ca3af;">Menghitung...</span>
+                  </div>` : `
+                  <span style="font-size:10px;color:#9ca3af;">📸 Salah satu tidak memiliki foto</span>`}
+              </div>
+
               <button onclick="confirmMatch('${lostId}','${foundId}')"
-                class="mt-2 w-full bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold py-2 rounded-lg transition">
+                class="mt-3 w-full bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold py-2 rounded-lg transition">
                 🔗 Konfirmasi Cocok & Selesaikan
               </button>
             </div>
@@ -765,7 +977,7 @@ function openModal(id, matched) {
         ${item.photo ? `
         <button id="modal-photo-btn"
           class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 rounded-xl text-sm font-semibold transition">
-          🔍 Lihat Penuh
+          🖼️ Lihat Barang
         </button>` : ''}
         ${item.status !== 'resolved' && adminLoggedIn ? `
         <button onclick="markResolved('${id}')"
@@ -782,6 +994,11 @@ function openModal(id, matched) {
 
   const photoBtn = document.getElementById('modal-photo-btn');
   if (photoBtn) photoBtn.onclick = () => openFullPhoto(window._curPhoto);
+
+  // Hitung kemiripan gambar secara async setelah modal tampil
+  if (item.photo && window._lastCandidates && window._lastCandidates.length > 0) {
+    updateImageSimilarity(item.photo, window._lastCandidates);
+  }
 }
 
 function openFullPhotoSrc(src) {
@@ -1278,6 +1495,11 @@ function claimTab(tab) {
     showToast('Silakan login Admin terlebih dahulu', 'bg-red-500');
     return;
   }
+  if (tab === 'new' && currentUserRole === 'guest') {
+    showToast('Silakan login terlebih dahulu untuk mengajukan klaim', 'bg-red-500');
+    openAuthModal();
+    return;
+  }
   document.getElementById('claim-tab-track').classList.toggle('hidden',   tab!=='track');
   document.getElementById('claim-tab-new').classList.toggle('hidden',     tab!=='new');
   document.getElementById('claim-tab-history').classList.toggle('hidden', tab!=='history');
@@ -1590,7 +1812,7 @@ let currentAdminTab    = 'lost';
 let currentClaimFilter = 'all';
 
 function setAdminNav(loggedIn) {
-  ['nav-all', 'nav-disposal'].forEach(id => {
+  ['nav-all', 'nav-disposal', 'nav-admin'].forEach(id => {
     document.getElementById(id).classList.toggle('hidden', !loggedIn);
   });
   // Tab Riwayat di modul Pengambilan
@@ -1606,39 +1828,80 @@ function setAdminNav(loggedIn) {
   document.getElementById('nav-admin').textContent = loggedIn ? '⚙️ Admin ✓' : '⚙️ Admin';
 }
 
-function adminLogin() {
-  const pw = document.getElementById('admin-password').value;
-  if (pw === ADMIN_PW) {
-    adminLoggedIn = true;
-    document.getElementById('admin-login-section').classList.add('hidden');
-    document.getElementById('admin-panel-section').classList.remove('hidden');
-    setAdminNav(true);
-    renderAdmin();
-  } else {
-    showToast('Password salah!', 'bg-red-500');
-  }
-}
 
-function adminLogout() {
-  adminLoggedIn = false;
-  document.getElementById('admin-login-section').classList.remove('hidden');
-  document.getElementById('admin-panel-section').classList.add('hidden');
-  document.getElementById('admin-password').value = '';
-  setAdminNav(false);
-  showPage('lost');
-}
 
 function adminTab(tab) {
   currentAdminTab = tab;
-  ['lost','found','claims'].forEach(t => {
+  ['lost','found','claims','users'].forEach(t => {
     document.getElementById(`admin-tab-${t}`).classList.toggle('hidden', t!==tab);
     document.getElementById(`atab-${t}`).classList.toggle('active', t===tab);
   });
   if (tab==='claims') renderAdminClaims(currentClaimFilter);
+  if (tab==='users')  renderUserList();
+}
+
+async function renderUserList() {
+  const list  = document.getElementById('admin-user-list');
+  const empty = document.getElementById('admin-user-empty');
+  list.innerHTML = '<p class="text-sm text-gray-400 text-center py-4">Memuat data...</p>';
+
+  try {
+    const snap = await _db.collection('users').orderBy('createdAt','desc').get();
+    if (snap.empty) { list.innerHTML=''; empty.classList.remove('hidden'); return; }
+    empty.classList.add('hidden');
+    list.innerHTML = snap.docs.map(doc => {
+      const u = doc.data();
+      const isAdmin = u.role === 'admin';
+      const roleBadge = isAdmin
+        ? `<span class="text-xs font-bold text-yellow-700 bg-yellow-100 px-2 py-0.5 rounded-full">👑 Admin</span>`
+        : `<span class="text-xs font-bold text-blue-700 bg-blue-100 px-2 py-0.5 rounded-full">🙋 User</span>`;
+      const actionBtn = isAdmin
+        ? `<button onclick="setUserRole('${u.uid}','user')"
+            class="text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 px-3 py-1.5 rounded-lg font-medium transition">
+            Jadikan User</button>`
+        : `<button onclick="setUserRole('${u.uid}','admin')"
+            class="text-xs bg-yellow-100 hover:bg-yellow-200 text-yellow-700 px-3 py-1.5 rounded-lg font-medium transition">
+            👑 Jadikan Admin</button>`;
+      return `
+        <div class="flex items-center justify-between bg-gray-50 rounded-xl p-3 border border-gray-100">
+          <div>
+            <div class="flex items-center gap-2 mb-0.5">
+              <p class="font-semibold text-gray-800 text-sm">${escapeHtml(u.name||'Tanpa Nama')}</p>
+              ${roleBadge}
+            </div>
+            <p class="text-xs text-gray-500">${escapeHtml(u.email||'-')}</p>
+            <p class="text-xs text-gray-400">Daftar: ${formatDateTime(u.createdAt||Date.now())}</p>
+          </div>
+          <div class="flex gap-2">
+            ${u.uid !== currentUser?.uid ? actionBtn : '<span class="text-xs text-gray-400">(Anda)</span>'}
+          </div>
+        </div>`;
+    }).join('');
+  } catch(e) {
+    list.innerHTML = `<p class="text-sm text-red-400 text-center py-4">Error: ${e.message}</p>`;
+  }
+}
+
+async function setUserRole(uid, role) {
+  try {
+    await _db.collection('users').doc(uid).set({ role }, { merge: true });
+    showToast(`Role berhasil diubah ke ${role === 'admin' ? '👑 Admin' : '🙋 User'}`, 'bg-green-600');
+    renderUserList();
+  } catch(e) {
+    showToast('Gagal mengubah role: ' + e.message, 'bg-red-500');
+  }
 }
 
 function renderAdmin() {
-  if (!adminLoggedIn) return;
+  const loginSec  = document.getElementById('admin-login-section');
+  const panelSec  = document.getElementById('admin-panel-section');
+  if (!adminLoggedIn) {
+    loginSec.classList.remove('hidden');
+    panelSec.classList.add('hidden');
+    return;
+  }
+  loginSec.classList.add('hidden');
+  panelSec.classList.remove('hidden');
   const items  = getItems();
   const claims = getClaims();
   const pending   = claims.filter(c=>c.status==='pending').length;
@@ -2473,4 +2736,24 @@ function showToast(msg, colorClass) {
 // ============================================================
 document.addEventListener('DOMContentLoaded', () => {
   initFirebase();
+
+  // Shortcut rahasia admin: Ctrl+Shift+A
+  document.addEventListener('keydown', e => {
+    if (e.ctrlKey && e.shiftKey && e.key === 'A') {
+      showPage('admin');
+    }
+  });
+
+  // Klik logo 5x untuk buka admin (mobile friendly)
+  let logoClicks = 0, logoTimer;
+  document.querySelector('[onclick="showPage(\'lost\')"]')?.addEventListener('click', () => {
+    logoClicks++;
+    clearTimeout(logoTimer);
+    logoTimer = setTimeout(() => logoClicks = 0, 2000);
+    if (logoClicks >= 5) {
+      logoClicks = 0;
+      showPage('admin');
+      showToast('🔓 Akses Admin', 'bg-indigo-600');
+    }
+  });
 });

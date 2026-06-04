@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Lost & Found — Temukan Barangmu</title>
+  <title>🔍 Lost & Found</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔍</text></svg>" />
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="style.css" />
 </head>
@@ -28,7 +29,21 @@
         <button onclick="showPage('disposal')" id="nav-disposal"
           class="nav-btn px-3 py-2 rounded-lg text-sm font-medium transition hidden">🗑️ Pemusnahan</button>
         <button onclick="showPage('admin')" id="nav-admin"
-          class="nav-btn px-3 py-2 rounded-lg text-sm font-medium transition">⚙️ Admin</button>
+          class="nav-btn px-3 py-2 rounded-lg text-sm font-medium transition hidden">⚙️ Admin</button>
+        <!-- Auth button -->
+        <div id="nav-auth-area" class="flex items-center gap-2 ml-1">
+          <button onclick="openAuthModal()"  id="btn-login"
+            class="bg-white text-indigo-700 px-3 py-1.5 rounded-lg text-sm font-semibold hover:bg-indigo-50 transition">
+            👤 Masuk
+          </button>
+          <div id="user-info" class="hidden items-center gap-2">
+            <span id="user-email-display" class="text-xs text-indigo-200 max-w-[120px] truncate"></span>
+            <button onclick="logoutUser()"
+              class="bg-white/20 hover:bg-white/30 text-white px-2.5 py-1.5 rounded-lg text-xs font-semibold transition">
+              Keluar
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   </nav>
@@ -45,8 +60,8 @@
           <p class="text-red-100 text-sm">Daftar barang yang dilaporkan hilang. Bantu temukan pemiliknya!</p>
           <div id="lost-stat" class="text-red-100 text-xs mt-2"></div>
         </div>
-        <button onclick="openReportModal('lost')"
-          class="bg-white text-red-600 hover:bg-red-50 font-bold px-4 py-2.5 rounded-xl text-sm transition flex-shrink-0 ml-4">
+        <button onclick="requireLogin(()=>openReportModal('lost'))"
+          class="btn-report-lost bg-white text-red-600 hover:bg-red-50 font-bold px-4 py-2.5 rounded-xl text-sm transition flex-shrink-0 ml-4 hidden">
           + Laporkan Hilang
         </button>
       </div>
@@ -95,8 +110,8 @@
           <p class="text-green-100 text-sm">Daftar barang yang ditemukan dan menunggu pemiliknya.</p>
           <div id="found-stat" class="text-green-100 text-xs mt-2"></div>
         </div>
-        <button onclick="openReportModal('found')"
-          class="bg-white text-green-600 hover:bg-green-50 font-bold px-4 py-2.5 rounded-xl text-sm transition flex-shrink-0 ml-4">
+        <button onclick="requireLogin(()=>openReportModal('found'))"
+          class="btn-report-found bg-white text-green-600 hover:bg-green-50 font-bold px-4 py-2.5 rounded-xl text-sm transition flex-shrink-0 ml-4 hidden">
           + Laporkan Temuan
         </button>
       </div>
@@ -195,7 +210,7 @@
         <button onclick="claimTab('track')" id="tab-track"
           class="claim-tab flex-1 py-2 rounded-xl text-sm font-semibold transition">Cek Status</button>
         <button onclick="claimTab('new')" id="tab-new"
-          class="claim-tab flex-1 py-2 rounded-xl text-sm font-semibold transition">Ajukan Klaim</button>
+          class="claim-tab flex-1 py-2 rounded-xl text-sm font-semibold transition hidden">Ajukan Klaim</button>
         <button onclick="claimTab('history')" id="tab-history"
           class="claim-tab flex-1 py-2 rounded-xl text-sm font-semibold transition hidden">📜 Riwayat</button>
       </div>
@@ -366,6 +381,28 @@
         </div>
       </div>
 
+      <!-- Contact Us — bawah halaman, tengah -->
+      <div class="max-w-md mx-auto mt-12 text-center">
+        <div class="bg-white border border-gray-200 rounded-2xl shadow-sm p-6">
+          <div class="text-3xl mb-2">📞</div>
+          <p class="font-bold text-gray-800 mb-1">Hubungi Kami</p>
+          <p class="text-gray-500 text-sm mb-4">
+            Untuk mengajukan klaim penemuan barang,<br>silakan hubungi petugas kami di:
+          </p>
+          <div class="flex justify-center gap-3 flex-wrap">
+            <a href="tel:+6281234567890"
+              class="inline-flex items-center gap-2 bg-indigo-50 border border-indigo-200 text-indigo-700 font-semibold text-sm px-4 py-2 rounded-xl hover:bg-indigo-100 transition">
+              📱 +62 812-3456-7890
+            </a>
+            <a href="https://wa.me/6281234567890" target="_blank"
+              class="inline-flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white font-semibold text-sm px-4 py-2 rounded-xl transition">
+              💬 WhatsApp
+            </a>
+          </div>
+          <p class="text-xs text-gray-400 mt-4">Senin – Minggu · 10.00 – 17.00 WIB</p>
+        </div>
+      </div>
+
     </div>
 
     <!-- ===== PAGE: PEMUSNAHAN ===== -->
@@ -473,23 +510,29 @@
     <!-- ===== PAGE: ADMIN ===== -->
     <div id="page-admin" class="page hidden">
       <div class="max-w-2xl mx-auto">
-        <div id="admin-login-section">
-          <div class="text-center mb-8">
-            <h1 class="text-3xl font-bold text-gray-800 mb-2">⚙️ Panel Admin</h1>
-            <p class="text-gray-500">Masukkan password untuk mengakses panel admin.</p>
-          </div>
-          <div class="bg-white rounded-2xl shadow-md p-6">
-            <input type="password" id="admin-password" placeholder="Password admin"
-              class="w-full border border-gray-300 rounded-xl px-4 py-3 mb-4 focus:outline-none focus:ring-2 focus:ring-indigo-400" />
-            <button onclick="adminLogin()"
-              class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 rounded-xl transition">Masuk</button>
+        <!-- Pesan jika belum login admin -->
+        <div id="admin-login-section" class="hidden">
+          <div class="text-center py-20">
+            <div class="text-6xl mb-4">🔒</div>
+            <h2 class="text-xl font-bold text-gray-700 mb-2">Akses Terbatas</h2>
+            <p class="text-gray-500 mb-6">Halaman ini hanya untuk admin.</p>
+            <button onclick="openAuthModal()"
+              class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-6 py-2.5 rounded-xl transition">
+              👤 Login sebagai Admin
+            </button>
           </div>
         </div>
 
         <div id="admin-panel-section" class="hidden">
           <div class="flex items-center justify-between mb-6">
             <h1 class="text-2xl font-bold text-gray-800">⚙️ Panel Admin</h1>
-            <button onclick="adminLogout()" class="text-sm text-red-500 hover:underline">Logout</button>
+            <button onclick="adminLogout()"
+              class="flex items-center gap-2 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 text-sm font-semibold px-4 py-2 rounded-xl transition">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h6a2 2 0 012 2v1" />
+              </svg>
+              Logout
+            </button>
           </div>
 
           <!-- Stat cards -->
@@ -522,6 +565,10 @@
               class="admin-tab px-4 py-2 rounded-xl text-sm font-semibold border transition">
               📋 Klaim & Pengambilan
               <span id="claim-badge" class="hidden ml-1 bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full"></span>
+            </button>
+            <button onclick="adminTab('users')" id="atab-users"
+              class="admin-tab px-4 py-2 rounded-xl text-sm font-semibold border transition">
+              👥 Kelola Pengguna
             </button>
           </div>
 
@@ -559,6 +606,25 @@
               <div class="text-4xl mb-2">📭</div><p>Tidak ada klaim.</p>
             </div>
           </div>
+
+          <!-- Tab: Kelola Pengguna -->
+          <div id="admin-tab-users" class="hidden">
+            <div class="bg-white rounded-2xl shadow-md p-5">
+              <div class="flex items-center justify-between mb-4">
+                <h2 class="font-bold text-gray-700">👥 Daftar Pengguna Terdaftar</h2>
+                <button onclick="renderUserList()"
+                  class="text-xs bg-indigo-100 text-indigo-600 hover:bg-indigo-200 px-3 py-1.5 rounded-lg font-medium transition">
+                  🔄 Refresh
+                </button>
+              </div>
+              <div id="admin-user-list" class="space-y-3 max-h-[500px] overflow-y-auto"></div>
+              <div id="admin-user-empty" class="hidden text-center py-10 text-gray-400">
+                <div class="text-4xl mb-2">👤</div>
+                <p>Belum ada pengguna terdaftar.</p>
+              </div>
+            </div>
+          </div>
+
         </div>
       </div>
     </div>
@@ -1087,6 +1153,38 @@
   <!-- TOAST -->
   <div id="toast" class="fixed bottom-6 right-6 z-50 hidden">
     <div id="toast-inner" class="px-5 py-3 rounded-xl text-white text-sm font-medium shadow-lg"></div>
+  </div>
+
+  <!-- MODAL: LOGIN -->
+  <div id="auth-modal-overlay" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4"
+       onclick="closeAuthModal(event)">
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-sm relative" onclick="event.stopPropagation()">
+      <button onclick="closeAuthModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-700 text-xl">✕</button>
+      <div class="p-6 text-center pb-2">
+        <div class="text-4xl mb-2">🔐</div>
+        <h2 class="text-xl font-bold text-gray-800">Masuk</h2>
+        <p class="text-xs text-gray-400 mt-1">Masukkan username dan password Anda</p>
+      </div>
+      <div class="p-6 pt-3 space-y-4">
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-1">Username</label>
+          <input id="login-username" type="text" placeholder="Username"
+            class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-400 outline-none"
+            onkeydown="if(event.key==='Enter')loginUser()" />
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-1">Password</label>
+          <input id="login-password" type="password" placeholder="Password"
+            class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-400 outline-none"
+            onkeydown="if(event.key==='Enter')loginUser()" />
+        </div>
+        <p id="login-error" class="text-xs text-red-500 hidden text-center"></p>
+        <button onclick="loginUser()"
+          class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 rounded-xl transition text-sm">
+          Masuk
+        </button>
+      </div>
+    </div>
   </div>
 
   <!-- Firebase SDK -->
