@@ -1,0 +1,94 @@
+/* Nav buttons */
+.nav-btn { color: rgba(255,255,255,0.8); }
+.nav-btn:hover, .nav-btn.active { background: rgba(255,255,255,0.2); color: #fff; }
+
+/* Filter buttons */
+.filter-btn { background: white; color: #6b7280; }
+.filter-btn:hover { background: #eef2ff; color: #4f46e5; border-color: #a5b4fc; }
+.filter-btn.active { background: #4f46e5; color: white; border-color: #4f46e5; }
+
+/* Card hover */
+.item-card { transition: transform 0.15s, box-shadow 0.15s; overflow: hidden; }
+.item-card:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(0,0,0,0.1); }
+.item-card img:first-child { display: block; width: 100%; height: auto; }
+
+/* Score bar */
+.score-bar-bg { background: #e5e7eb; border-radius: 999px; height: 6px; overflow: hidden; }
+.score-bar-fill { height: 100%; border-radius: 999px; transition: width 0.4s ease; }
+
+/* Badge */
+.badge-lost { background: #fee2e2; color: #dc2626; }
+.badge-found { background: #dcfce7; color: #16a34a; }
+.badge-resolved { background: #f3f4f6; color: #6b7280; }
+
+/* Highlight matched text */
+.highlight { background: #fef08a; border-radius: 2px; padding: 0 1px; }
+
+/* Toast animation */
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+#toast-inner { animation: slideUp 0.25s ease; }
+
+/* Step indicator */
+.step-dot {
+  width: 28px; height: 28px; border-radius: 50%; border: 2px solid #d1d5db;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 700; color: #9ca3af; background: white;
+  flex-shrink: 0; transition: all 0.2s;
+}
+.step-dot.active { border-color: #4f46e5; color: #4f46e5; }
+.step-dot.done { border-color: #4f46e5; background: #4f46e5; color: white; }
+.step-line {
+  flex: 1; height: 2px; background: #e5e7eb; margin: 0 4px; transition: background 0.3s;
+}
+.step-line.done { background: #4f46e5; }
+
+/* Claim tab */
+.claim-tab { color: #6b7280; background: transparent; }
+.claim-tab.active { background: #4f46e5; color: white; }
+
+/* Claim item selectable row */
+.claim-item-row { cursor: pointer; border: 2px solid transparent; transition: all 0.15s; }
+.claim-item-row:hover { border-color: #a5b4fc; background: #eef2ff; }
+.claim-item-row.selected { border-color: #4f46e5; background: #eef2ff; }
+
+/* Admin tabs */
+.admin-tab { background: white; color: #6b7280; }
+.admin-tab:hover { background: #eef2ff; color: #4f46e5; border-color: #a5b4fc; }
+.admin-tab.active { background: #4f46e5; color: white; border-color: #4f46e5; }
+
+/* Claim filter buttons */
+.claim-filter-btn { background: white; color: #6b7280; }
+.claim-filter-btn:hover { background: #eef2ff; color: #4f46e5; border-color: #a5b4fc; }
+.claim-filter-btn.active { background: #4f46e5; color: white; border-color: #4f46e5; }
+
+/* Status badges for claims */
+.badge-matched  { background: #dcfce7; color: #15803d; }
+.badge-pending  { background: #fef9c3; color: #a16207; }
+.badge-approved { background: #dbeafe; color: #1d4ed8; }
+.badge-rejected { background: #fee2e2; color: #dc2626; }
+.badge-completed { background: #f0fdf4; color: #15803d; }
+
+/* Disposal badges */
+.badge-disposed  { background: #ffedd5; color: #c2410c; }
+.badge-destroyed { background: #fee2e2; color: #991b1b; }
+.badge-donated   { background: #dbeafe; color: #1e40af; }
+
+/* Ticket */
+.ticket-border { border: 2px dashed #c7d2fe; }
+
+/* Signature pad */
+#sig-canvas { background: #fafafa; }
+#sig-wrap.signed { border-color: #6366f1; }
+.sig-display {
+  border: 1px solid #e5e7eb; border-radius: 8px;
+  background: #f9fafb; padding: 4px; max-width: 100%;
+}
+.sig-display img { max-height: 72px; display: block; margin: 0 auto; }
+
+/* Scrollbar thin */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #f1f5f9; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }

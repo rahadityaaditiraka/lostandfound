@@ -1,0 +1,1116 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lost & Found — Temukan Barangmu</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body class="bg-gray-50 min-h-screen font-sans">
+
+  <!-- NAVBAR -->
+  <nav class="bg-indigo-700 text-white shadow-lg sticky top-0 z-40">
+    <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center gap-2 cursor-pointer" onclick="showPage('lost')">
+        <span class="text-2xl">🔍</span>
+        <span class="font-bold text-xl tracking-wide">Lost & Found</span>
+      </div>
+      <div class="flex gap-1 flex-wrap justify-end">
+        <button onclick="showPage('lost')"  id="nav-lost"
+          class="nav-btn px-3 py-2 rounded-lg text-sm font-medium transition">🚨 Barang Hilang</button>
+        <button onclick="showPage('found')" id="nav-found"
+          class="nav-btn px-3 py-2 rounded-lg text-sm font-medium transition">✅ Barang Ditemukan</button>
+        <button onclick="showPage('all')" id="nav-all"
+          class="nav-btn px-3 py-2 rounded-lg text-sm font-medium transition hidden">📋 Semua Laporan</button>
+        <button onclick="showPage('claim')" id="nav-claim"
+          class="nav-btn px-3 py-2 rounded-lg text-sm font-medium transition">🤝 Pengambilan</button>
+        <button onclick="showPage('disposal')" id="nav-disposal"
+          class="nav-btn px-3 py-2 rounded-lg text-sm font-medium transition hidden">🗑️ Pemusnahan</button>
+        <button onclick="showPage('admin')" id="nav-admin"
+          class="nav-btn px-3 py-2 rounded-lg text-sm font-medium transition">⚙️ Admin</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="max-w-6xl mx-auto px-4 py-8">
+
+    <!-- ===== PAGE: BARANG HILANG ===== -->
+    <div id="page-lost" class="page hidden">
+
+      <!-- Hero -->
+      <div class="bg-gradient-to-r from-red-500 to-red-600 rounded-2xl text-white p-6 mb-6 flex items-center justify-between">
+        <div>
+          <h1 class="text-2xl font-bold mb-1">🚨 Barang Hilang</h1>
+          <p class="text-red-100 text-sm">Daftar barang yang dilaporkan hilang. Bantu temukan pemiliknya!</p>
+          <div id="lost-stat" class="text-red-100 text-xs mt-2"></div>
+        </div>
+        <button onclick="openReportModal('lost')"
+          class="bg-white text-red-600 hover:bg-red-50 font-bold px-4 py-2.5 rounded-xl text-sm transition flex-shrink-0 ml-4">
+          + Laporkan Hilang
+        </button>
+      </div>
+
+      <!-- Filter & Search -->
+      <div class="bg-white rounded-2xl shadow-sm p-4 mb-5">
+        <div class="flex flex-col md:flex-row gap-3">
+          <input id="lost-search" type="text"
+            placeholder="Cari barang hilang berdasarkan deskripsi…"
+            oninput="renderItemPage('lost')"
+            class="flex-1 border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-400" />
+          <select id="lost-category" onchange="renderItemPage('lost')"
+            class="border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-400">
+            <option value="">Semua Kategori</option>
+            <option value="elektronik">Elektronik</option>
+            <option value="dompet/tas">Dompet / Tas</option>
+            <option value="kunci">Kunci</option>
+            <option value="dokumen">Dokumen</option>
+            <option value="aksesoris">Aksesoris</option>
+            <option value="lainnya">Lainnya</option>
+          </select>
+          <select id="lost-status-filter" onchange="renderItemPage('lost')"
+            class="border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-400">
+            <option value="open">Belum Ditemukan</option>
+            <option value="resolved">Sudah Ditemukan</option>
+            <option value="">Semua</option>
+          </select>
+        </div>
+        <div id="lost-hint" class="mt-2 text-xs text-gray-400"></div>
+      </div>
+
+      <div id="lost-results"  class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+      <div id="lost-empty" class="hidden text-center py-16 text-gray-400">
+        <div class="text-5xl mb-3">😔</div>
+        <p class="text-lg font-medium">Tidak ada laporan barang hilang.</p>
+      </div>
+    </div>
+
+    <!-- ===== PAGE: BARANG DITEMUKAN ===== -->
+    <div id="page-found" class="page hidden">
+
+      <!-- Hero -->
+      <div class="bg-gradient-to-r from-green-500 to-emerald-600 rounded-2xl text-white p-6 mb-6 flex items-center justify-between">
+        <div>
+          <h1 class="text-2xl font-bold mb-1">✅ Barang Ditemukan</h1>
+          <p class="text-green-100 text-sm">Daftar barang yang ditemukan dan menunggu pemiliknya.</p>
+          <div id="found-stat" class="text-green-100 text-xs mt-2"></div>
+        </div>
+        <button onclick="openReportModal('found')"
+          class="bg-white text-green-600 hover:bg-green-50 font-bold px-4 py-2.5 rounded-xl text-sm transition flex-shrink-0 ml-4">
+          + Laporkan Temuan
+        </button>
+      </div>
+
+      <!-- Filter & Search -->
+      <div class="bg-white rounded-2xl shadow-sm p-4 mb-5">
+        <div class="flex flex-col md:flex-row gap-3">
+          <input id="found-search" type="text"
+            placeholder="Cari barang ditemukan berdasarkan deskripsi…"
+            oninput="renderItemPage('found')"
+            class="flex-1 border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-400" />
+          <select id="found-category" onchange="renderItemPage('found')"
+            class="border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-400">
+            <option value="">Semua Kategori</option>
+            <option value="elektronik">Elektronik</option>
+            <option value="dompet/tas">Dompet / Tas</option>
+            <option value="kunci">Kunci</option>
+            <option value="dokumen">Dokumen</option>
+            <option value="aksesoris">Aksesoris</option>
+            <option value="lainnya">Lainnya</option>
+          </select>
+          <select id="found-status-filter" onchange="renderItemPage('found')"
+            class="border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-400">
+            <option value="open">Menunggu Pemilik</option>
+            <option value="resolved">Sudah Diambil</option>
+            <option value="">Semua</option>
+          </select>
+        </div>
+        <div id="found-hint" class="mt-2 text-xs text-gray-400"></div>
+      </div>
+
+      <div id="found-results" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+      <div id="found-empty" class="hidden text-center py-16 text-gray-400">
+        <div class="text-5xl mb-3">📭</div>
+        <p class="text-lg font-medium">Tidak ada laporan barang ditemukan.</p>
+      </div>
+    </div>
+
+    <!-- ===== PAGE: SEMUA LAPORAN ===== -->
+    <div id="page-all" class="page hidden">
+
+      <div class="flex items-center justify-between mb-6 flex-wrap gap-3">
+        <div>
+          <h1 class="text-2xl font-bold text-gray-800">📋 Semua Laporan</h1>
+          <p class="text-sm text-gray-500 mt-0.5">Diurutkan dari tanggal kejadian terbaru.</p>
+        </div>
+        <div class="flex gap-2 flex-wrap">
+          <button onclick="filterAll('all')"   id="fall-all"   class="filter-btn px-4 py-2 rounded-lg text-sm font-medium border">Semua</button>
+          <button onclick="filterAll('lost')"  id="fall-lost"  class="filter-btn px-4 py-2 rounded-lg text-sm font-medium border">🚨 Hilang</button>
+          <button onclick="filterAll('found')" id="fall-found" class="filter-btn px-4 py-2 rounded-lg text-sm font-medium border">✅ Ditemukan</button>
+        </div>
+      </div>
+
+      <!-- Filter bar -->
+      <div class="bg-white rounded-2xl shadow-sm p-4 mb-5">
+        <div class="flex flex-col md:flex-row gap-3">
+          <input id="all-search" type="text" placeholder="Cari semua laporan…"
+            oninput="renderAll()"
+            class="flex-1 border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+          <select id="all-category" onchange="renderAll()"
+            class="border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400">
+            <option value="">Semua Kategori</option>
+            <option value="elektronik">Elektronik</option>
+            <option value="dompet/tas">Dompet / Tas</option>
+            <option value="kunci">Kunci</option>
+            <option value="dokumen">Dokumen</option>
+            <option value="aksesoris">Aksesoris</option>
+            <option value="lainnya">Lainnya</option>
+          </select>
+          <select id="all-status" onchange="renderAll()"
+            class="border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400">
+            <option value="">Semua Status</option>
+            <option value="open">Aktif</option>
+            <option value="resolved">Selesai</option>
+          </select>
+        </div>
+        <div id="all-hint" class="mt-2 text-xs text-gray-400"></div>
+      </div>
+
+      <!-- Timeline list -->
+      <div id="all-results"></div>
+      <div id="all-empty" class="hidden text-center py-16 text-gray-400">
+        <div class="text-5xl mb-3">📭</div>
+        <p class="text-lg font-medium">Tidak ada laporan yang cocok.</p>
+      </div>
+    </div>
+
+    <!-- ===== PAGE: PENGAMBILAN ===== -->
+    <div id="page-claim" class="page hidden">
+      <div class="text-center mb-8">
+        <h1 class="text-3xl font-bold text-gray-800 mb-2">📋 Pengambilan Barang</h1>
+        <p class="text-gray-500">Ajukan klaim kepemilikan atau cek status pengambilan barangmu.</p>
+      </div>
+
+      <div class="flex gap-2 mb-6 bg-white rounded-2xl shadow-sm p-1.5 max-w-sm mx-auto">
+        <button onclick="claimTab('track')" id="tab-track"
+          class="claim-tab flex-1 py-2 rounded-xl text-sm font-semibold transition">Cek Status</button>
+        <button onclick="claimTab('new')" id="tab-new"
+          class="claim-tab flex-1 py-2 rounded-xl text-sm font-semibold transition">Ajukan Klaim</button>
+        <button onclick="claimTab('history')" id="tab-history"
+          class="claim-tab flex-1 py-2 rounded-xl text-sm font-semibold transition">📜 Riwayat</button>
+      </div>
+
+      <!-- TAB: Track -->
+      <div id="claim-tab-track" class="max-w-lg mx-auto">
+        <div class="bg-white rounded-2xl shadow-md p-6 mb-4">
+          <label class="block text-sm font-semibold text-gray-700 mb-2">Nomor Klaim / Kontak</label>
+          <div class="flex gap-2">
+            <input id="track-input" type="text" placeholder="Masukkan nomor klaim atau nomor kontak"
+              class="flex-1 border border-gray-300 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-400 text-sm" />
+            <button onclick="trackClaim()"
+              class="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl text-sm font-semibold transition">Cek</button>
+          </div>
+        </div>
+        <div id="track-results"></div>
+      </div>
+
+      <!-- TAB: New claim -->
+      <div id="claim-tab-new" class="max-w-xl mx-auto hidden">
+        <div class="bg-white rounded-2xl shadow-md p-6">
+          <div class="flex items-center mb-6">
+            <div class="step-dot active" id="step-dot-1">1</div>
+            <div class="step-line" id="step-line-1"></div>
+            <div class="step-dot" id="step-dot-2">2</div>
+            <div class="step-line" id="step-line-2"></div>
+            <div class="step-dot" id="step-dot-3">3</div>
+          </div>
+          <div class="flex justify-between text-xs text-gray-400 mb-6 -mt-3">
+            <span>Pilih Barang</span><span class="ml-4">Bukti Kepemilikan</span><span>Jadwal Ambil</span>
+          </div>
+
+          <!-- STEP 1 -->
+          <div id="claim-step-1">
+            <h3 class="font-bold text-gray-700 mb-3">Pilih barang yang ingin diklaim</h3>
+            <input id="claim-search" type="text" placeholder="Cari nama barang..."
+              oninput="filterClaimItems()"
+              class="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 mb-3" />
+            <div id="claim-item-list" class="space-y-2 max-h-64 overflow-y-auto mb-4"></div>
+            <div id="claim-selected-preview" class="hidden bg-indigo-50 border border-indigo-200 rounded-xl p-3 mb-4 text-sm">
+              <span class="font-semibold text-indigo-700">Dipilih: </span>
+              <span id="claim-selected-name" class="text-indigo-600"></span>
+            </div>
+            <button onclick="claimNextStep(1)" id="btn-step1-next"
+              class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 rounded-xl transition disabled:opacity-40" disabled>
+              Lanjut →
+            </button>
+          </div>
+
+          <!-- STEP 2 -->
+          <div id="claim-step-2" class="hidden">
+            <h3 class="font-bold text-gray-700 mb-1">Bukti Kepemilikan</h3>
+            <p class="text-xs text-gray-400 mb-4">Deskripsikan detail spesifik yang hanya pemilik asli yang tahu.</p>
+            <div class="mb-3">
+              <label class="block text-sm font-semibold text-gray-700 mb-1">Nama Pengklaim *</label>
+              <input type="text" id="claim-name" placeholder="Nama lengkap"
+                class="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+            </div>
+            <div class="mb-3">
+              <label class="block text-sm font-semibold text-gray-700 mb-1">Kontak (WA / Email) *</label>
+              <input type="text" id="claim-contact" placeholder="08xxxxxxxxxx"
+                class="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+            </div>
+            <div class="mb-3">
+              <label class="block text-sm font-semibold text-gray-700 mb-1">Bukti Kepemilikan *</label>
+              <textarea id="claim-proof" rows="3"
+                placeholder="Contoh: Di dalam dompet ada foto keluarga, uang Rp150.000, kartu ATM BCA atas nama saya..."
+                class="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 resize-none"></textarea>
+              <p class="text-xs text-gray-400 mt-1">Semakin detail semakin cepat diverifikasi.</p>
+            </div>
+            <div class="mb-4">
+              <label class="block text-sm font-semibold text-gray-700 mb-1">
+                Tanda Tangan Digital *
+                <span class="text-gray-400 font-normal text-xs ml-1">— sebagai pernyataan kepemilikan</span>
+              </label>
+              <div class="border-2 border-gray-300 rounded-xl overflow-hidden bg-white relative" id="sig-wrap">
+                <canvas id="sig-canvas" width="560" height="160"
+                  class="w-full touch-none cursor-crosshair block"></canvas>
+                <div id="sig-placeholder"
+                  class="absolute inset-0 flex items-center justify-center pointer-events-none">
+                  <span class="text-gray-300 text-sm select-none">Tanda tangan di sini…</span>
+                </div>
+              </div>
+              <div class="flex justify-between items-center mt-1.5">
+                <p class="text-xs text-gray-400">Gunakan mouse atau sentuh layar untuk menandatangani.</p>
+                <button type="button" onclick="clearSignature()" class="text-xs text-red-500 hover:underline">Hapus</button>
+              </div>
+            </div>
+            <div class="flex gap-2">
+              <button onclick="claimPrevStep(2)"
+                class="flex-1 border border-gray-200 hover:bg-gray-50 text-gray-600 py-2.5 rounded-xl text-sm font-semibold transition">← Kembali</button>
+              <button onclick="claimNextStep(2)"
+                class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 rounded-xl transition text-sm">Lanjut →</button>
+            </div>
+          </div>
+
+          <!-- STEP 3 -->
+          <div id="claim-step-3" class="hidden">
+            <h3 class="font-bold text-gray-700 mb-1">Preferensi Jadwal Pengambilan</h3>
+            <p class="text-xs text-gray-400 mb-4">Admin akan mengkonfirmasi jadwal setelah verifikasi.</p>
+            <div class="mb-3">
+              <label class="block text-sm font-semibold text-gray-700 mb-1">Tanggal yang Diinginkan *</label>
+              <input type="date" id="claim-date"
+                class="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+            </div>
+            <div class="mb-3">
+              <label class="block text-sm font-semibold text-gray-700 mb-1">Waktu yang Diinginkan *</label>
+              <select id="claim-time"
+                class="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400">
+                <option value="">-- Pilih Waktu --</option>
+                <option>08:00 - 09:00</option><option>09:00 - 10:00</option>
+                <option>10:00 - 11:00</option><option>11:00 - 12:00</option>
+                <option>13:00 - 14:00</option><option>14:00 - 15:00</option>
+                <option>15:00 - 16:00</option><option>16:00 - 17:00</option>
+              </select>
+            </div>
+            <div class="mb-6">
+              <label class="block text-sm font-semibold text-gray-700 mb-1">Catatan Tambahan</label>
+              <input type="text" id="claim-note" placeholder="Opsional"
+                class="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+            </div>
+            <div class="flex gap-2">
+              <button onclick="claimPrevStep(3)"
+                class="flex-1 border border-gray-200 hover:bg-gray-50 text-gray-600 py-2.5 rounded-xl text-sm font-semibold transition">← Kembali</button>
+              <button onclick="submitClaim()"
+                class="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold py-2.5 rounded-xl transition text-sm">Kirim Klaim ✅</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB: Riwayat Pengambilan -->
+      <div id="claim-tab-history" class="max-w-3xl mx-auto hidden">
+
+        <!-- Filter bar -->
+        <div class="flex flex-wrap gap-2 mb-5 items-center">
+          <button onclick="pickupHistoryFilter('all')"     id="phf-all"     class="claim-filter-btn px-3 py-1.5 rounded-lg text-xs font-medium border transition active">Semua</button>
+          <button onclick="pickupHistoryFilter('claim')"   id="phf-claim"   class="claim-filter-btn px-3 py-1.5 rounded-lg text-xs font-medium border transition">Via Klaim</button>
+          <button onclick="pickupHistoryFilter('direct')"  id="phf-direct"  class="claim-filter-btn px-3 py-1.5 rounded-lg text-xs font-medium border transition">Langsung</button>
+          <div class="ml-auto flex items-center gap-2">
+            <input id="phf-search" type="text" placeholder="Cari nama / barang…" oninput="renderPickupHistory()"
+              class="border border-gray-200 rounded-xl px-3 py-1.5 text-xs focus:ring-2 focus:ring-indigo-300 outline-none w-48" />
+          </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="grid grid-cols-3 gap-3 mb-6">
+          <div class="bg-white rounded-2xl shadow-sm p-3 text-center border-t-4 border-indigo-400">
+            <div class="text-xl font-bold text-indigo-600" id="ph-stat-total">0</div>
+            <div class="text-xs text-gray-500 mt-0.5">Total Pengambilan</div>
+          </div>
+          <div class="bg-white rounded-2xl shadow-sm p-3 text-center border-t-4 border-green-400">
+            <div class="text-xl font-bold text-green-600" id="ph-stat-claim">0</div>
+            <div class="text-xs text-gray-500 mt-0.5">Via Klaim</div>
+          </div>
+          <div class="bg-white rounded-2xl shadow-sm p-3 text-center border-t-4 border-blue-400">
+            <div class="text-xl font-bold text-blue-600" id="ph-stat-direct">0</div>
+            <div class="text-xs text-gray-500 mt-0.5">Langsung</div>
+          </div>
+        </div>
+
+        <!-- List -->
+        <div id="pickup-history-list" class="space-y-4"></div>
+        <div id="pickup-history-empty" class="hidden text-center py-16 text-gray-400">
+          <div class="text-5xl mb-3">📭</div>
+          <p class="font-semibold">Belum ada riwayat pengambilan</p>
+          <p class="text-sm mt-1">Riwayat akan muncul setelah ada barang yang berhasil diambil.</p>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ===== PAGE: PEMUSNAHAN ===== -->
+    <div id="page-disposal" class="page hidden">
+      <div class="max-w-4xl mx-auto">
+
+        <!-- Header -->
+        <div class="text-center mb-8">
+          <div class="inline-flex items-center justify-center w-16 h-16 bg-orange-100 rounded-2xl mb-3 text-3xl">🗑️</div>
+          <h1 class="text-3xl font-bold text-gray-800 mb-2">Pemusnahan & Donasi Barang</h1>
+          <p class="text-gray-500 max-w-xl mx-auto">Barang temuan yang tidak ada pemiliknya setelah jangka waktu tertentu dapat dimusnahkan atau didonasikan. Setiap tindakan wajib disertai bukti.</p>
+        </div>
+
+        <!-- Stat bar -->
+        <div class="grid grid-cols-3 gap-4 mb-8">
+          <div class="bg-white rounded-2xl shadow-sm p-4 text-center border-t-4 border-orange-400">
+            <div class="text-2xl font-bold text-orange-500" id="dsp-stat-eligible">0</div>
+            <div class="text-xs text-gray-500 mt-1">Menunggu Tindakan</div>
+          </div>
+          <div class="bg-white rounded-2xl shadow-sm p-4 text-center border-t-4 border-red-400">
+            <div class="text-2xl font-bold text-red-500" id="dsp-stat-destroyed">0</div>
+            <div class="text-xs text-gray-500 mt-1">Dimusnahkan</div>
+          </div>
+          <div class="bg-white rounded-2xl shadow-sm p-4 text-center border-t-4 border-blue-400">
+            <div class="text-2xl font-bold text-blue-500" id="dsp-stat-donated">0</div>
+            <div class="text-xs text-gray-500 mt-1">Didonasikan</div>
+          </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="flex gap-2 mb-6">
+          <button onclick="disposalTab('eligible')" id="dtab-eligible"
+            class="admin-tab px-4 py-2 rounded-xl text-sm font-semibold border transition active">
+            📦 Barang Eligible
+          </button>
+          <button onclick="disposalTab('history')" id="dtab-history"
+            class="admin-tab px-4 py-2 rounded-xl text-sm font-semibold border transition">
+            📜 Riwayat Pemusnahan
+          </button>
+        </div>
+
+        <!-- Tab: Eligible -->
+        <div id="dsp-tab-eligible">
+          <!-- Info box -->
+          <div class="bg-orange-50 border border-orange-200 rounded-2xl p-4 mb-5 flex gap-3">
+            <span class="text-2xl flex-shrink-0">⚠️</span>
+            <div class="text-sm text-orange-700">
+              <p class="font-semibold mb-0.5">Kriteria barang yang dapat dimusnahkan/didonasikan:</p>
+              <ul class="list-disc list-inside space-y-0.5 text-orange-600">
+                <li>Barang <b>ditemukan</b> yang berstatus <b>aktif / belum ada pemilik</b></li>
+                <li>Tidak ada klaim aktif yang sedang diproses</li>
+                <li>Sudah melewati masa tunggu yang ditentukan</li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- Filter -->
+          <div class="flex gap-2 flex-wrap mb-4">
+            <select id="dsp-filter-age" onchange="renderDisposalPage()"
+              class="border border-gray-200 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-orange-400 outline-none">
+              <option value="0">Semua umur</option>
+              <option value="7">≥ 7 hari</option>
+              <option value="14" selected>≥ 14 hari</option>
+              <option value="30">≥ 30 hari</option>
+              <option value="60">≥ 60 hari</option>
+            </select>
+            <select id="dsp-filter-cat" onchange="renderDisposalPage()"
+              class="border border-gray-200 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-orange-400 outline-none">
+              <option value="">Semua kategori</option>
+              <option value="elektronik">Elektronik</option>
+              <option value="dompet/tas">Dompet / Tas</option>
+              <option value="dokumen">Dokumen</option>
+              <option value="kunci">Kunci</option>
+              <option value="aksesoris">Aksesoris</option>
+              <option value="pakaian">Pakaian</option>
+              <option value="lainnya">Lainnya</option>
+            </select>
+          </div>
+
+          <div id="dsp-eligible-list" class="space-y-4"></div>
+          <div id="dsp-eligible-empty" class="hidden text-center py-16 text-gray-400">
+            <div class="text-5xl mb-3">✅</div>
+            <p class="font-semibold">Tidak ada barang yang memenuhi kriteria</p>
+            <p class="text-sm mt-1">Semua barang ditemukan sudah ditangani atau belum memenuhi batas umur.</p>
+          </div>
+        </div>
+
+        <!-- Tab: History -->
+        <div id="dsp-tab-history" class="hidden">
+          <div class="flex gap-2 mb-4">
+            <button onclick="disposalHistoryFilter('all')"       id="dhf-all"       class="claim-filter-btn px-3 py-1.5 rounded-lg text-xs font-medium border transition active">Semua</button>
+            <button onclick="disposalHistoryFilter('destroyed')" id="dhf-destroyed" class="claim-filter-btn px-3 py-1.5 rounded-lg text-xs font-medium border transition">🔥 Dimusnahkan</button>
+            <button onclick="disposalHistoryFilter('donated')"   id="dhf-donated"   class="claim-filter-btn px-3 py-1.5 rounded-lg text-xs font-medium border transition">💙 Didonasikan</button>
+          </div>
+          <div id="dsp-history-list" class="space-y-4"></div>
+          <div id="dsp-history-empty" class="hidden text-center py-16 text-gray-400">
+            <div class="text-5xl mb-3">📭</div>
+            <p class="font-semibold">Belum ada riwayat pemusnahan</p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ===== PAGE: ADMIN ===== -->
+    <div id="page-admin" class="page hidden">
+      <div class="max-w-2xl mx-auto">
+        <div id="admin-login-section">
+          <div class="text-center mb-8">
+            <h1 class="text-3xl font-bold text-gray-800 mb-2">⚙️ Panel Admin</h1>
+            <p class="text-gray-500">Masukkan password untuk mengakses panel admin.</p>
+          </div>
+          <div class="bg-white rounded-2xl shadow-md p-6">
+            <input type="password" id="admin-password" placeholder="Password admin"
+              class="w-full border border-gray-300 rounded-xl px-4 py-3 mb-4 focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+            <button onclick="adminLogin()"
+              class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 rounded-xl transition">Masuk</button>
+          </div>
+        </div>
+
+        <div id="admin-panel-section" class="hidden">
+          <div class="flex items-center justify-between mb-6">
+            <h1 class="text-2xl font-bold text-gray-800">⚙️ Panel Admin</h1>
+            <button onclick="adminLogout()" class="text-sm text-red-500 hover:underline">Logout</button>
+          </div>
+
+          <!-- Stat cards -->
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+            <div class="bg-white rounded-2xl shadow p-4 text-center border-t-4 border-red-400">
+              <div class="text-2xl font-bold text-red-500" id="stat-lost">0</div>
+              <div class="text-xs text-gray-500 mt-1">Hilang</div>
+            </div>
+            <div class="bg-white rounded-2xl shadow p-4 text-center border-t-4 border-green-400">
+              <div class="text-2xl font-bold text-green-500" id="stat-found">0</div>
+              <div class="text-xs text-gray-500 mt-1">Ditemukan</div>
+            </div>
+            <div class="bg-white rounded-2xl shadow p-4 text-center border-t-4 border-yellow-400">
+              <div class="text-2xl font-bold text-yellow-500" id="stat-pending">0</div>
+              <div class="text-xs text-gray-500 mt-1">Klaim Pending</div>
+            </div>
+            <div class="bg-white rounded-2xl shadow p-4 text-center border-t-4 border-indigo-400">
+              <div class="text-2xl font-bold text-indigo-500" id="stat-scheduled">0</div>
+              <div class="text-xs text-gray-500 mt-1">Dijadwalkan</div>
+            </div>
+          </div>
+
+          <!-- Admin tabs -->
+          <div class="flex gap-2 mb-4 flex-wrap">
+            <button onclick="adminTab('lost')"  id="atab-lost"
+              class="admin-tab px-4 py-2 rounded-xl text-sm font-semibold border transition">🚨 Barang Hilang</button>
+            <button onclick="adminTab('found')" id="atab-found"
+              class="admin-tab px-4 py-2 rounded-xl text-sm font-semibold border transition">✅ Barang Ditemukan</button>
+            <button onclick="adminTab('claims')" id="atab-claims"
+              class="admin-tab px-4 py-2 rounded-xl text-sm font-semibold border transition">
+              📋 Klaim & Pengambilan
+              <span id="claim-badge" class="hidden ml-1 bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full"></span>
+            </button>
+          </div>
+
+          <!-- Tab: Barang Hilang -->
+          <div id="admin-tab-lost" class="bg-white rounded-2xl shadow-md p-5">
+            <div class="flex items-center justify-between mb-4">
+              <h2 class="font-bold text-gray-700">Laporan Barang Hilang</h2>
+              <button onclick="clearTypeData('lost')"
+                class="text-xs bg-red-100 text-red-600 hover:bg-red-200 px-3 py-1.5 rounded-lg font-medium transition">Hapus Semua</button>
+            </div>
+            <div id="admin-list-lost" class="space-y-3 max-h-[500px] overflow-y-auto"></div>
+          </div>
+
+          <!-- Tab: Barang Ditemukan -->
+          <div id="admin-tab-found" class="hidden bg-white rounded-2xl shadow-md p-5">
+            <div class="flex items-center justify-between mb-4">
+              <h2 class="font-bold text-gray-700">Laporan Barang Ditemukan</h2>
+              <button onclick="clearTypeData('found')"
+                class="text-xs bg-red-100 text-red-600 hover:bg-red-200 px-3 py-1.5 rounded-lg font-medium transition">Hapus Semua</button>
+            </div>
+            <div id="admin-list-found" class="space-y-3 max-h-[500px] overflow-y-auto"></div>
+          </div>
+
+          <!-- Tab: Klaim -->
+          <div id="admin-tab-claims" class="hidden space-y-4">
+            <div class="flex gap-2 flex-wrap">
+              <button onclick="filterClaims('all')"       id="cf-all"       class="claim-filter-btn px-3 py-1.5 rounded-lg text-xs font-medium border transition">Semua</button>
+              <button onclick="filterClaims('pending')"   id="cf-pending"   class="claim-filter-btn px-3 py-1.5 rounded-lg text-xs font-medium border transition">Pending</button>
+              <button onclick="filterClaims('approved')"  id="cf-approved"  class="claim-filter-btn px-3 py-1.5 rounded-lg text-xs font-medium border transition">Disetujui</button>
+              <button onclick="filterClaims('rejected')"  id="cf-rejected"  class="claim-filter-btn px-3 py-1.5 rounded-lg text-xs font-medium border transition">Ditolak</button>
+              <button onclick="filterClaims('completed')" id="cf-completed" class="claim-filter-btn px-3 py-1.5 rounded-lg text-xs font-medium border transition">Selesai</button>
+            </div>
+            <div id="admin-claims-list" class="space-y-4"></div>
+            <div id="admin-claims-empty" class="hidden text-center py-10 text-gray-400">
+              <div class="text-4xl mb-2">📭</div><p>Tidak ada klaim.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- MODAL: LAPORAN BARANG -->
+  <div id="report-modal-overlay" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4"
+       onclick="closeReportModal(event)">
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto relative"
+         onclick="event.stopPropagation()">
+      <div class="sticky top-0 bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between rounded-t-2xl z-10">
+        <div>
+          <h2 id="report-modal-title" class="text-lg font-bold text-gray-800"></h2>
+          <p id="report-modal-sub"   class="text-xs text-gray-400 mt-0.5"></p>
+        </div>
+        <button onclick="closeReportModal()" class="text-gray-400 hover:text-gray-700 text-xl ml-4">✕</button>
+      </div>
+      <div class="p-6">
+        <form id="report-form" onsubmit="submitReport(event)">
+          <input type="hidden" id="report-type" />
+
+          <div class="mb-4">
+            <label class="block text-sm font-semibold text-gray-700 mb-1">Nama Barang *</label>
+            <input type="text" id="item-name" placeholder="Contoh: Dompet kulit coklat" required
+              class="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+          </div>
+          <div class="mb-4">
+            <label class="block text-sm font-semibold text-gray-700 mb-1">Kategori *</label>
+            <select id="item-category" required
+              class="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400">
+              <option value="">-- Pilih Kategori --</option>
+              <option value="elektronik">Elektronik</option>
+              <option value="dompet/tas">Dompet / Tas</option>
+              <option value="kunci">Kunci</option>
+              <option value="dokumen">Dokumen</option>
+              <option value="aksesoris">Aksesoris</option>
+              <option value="lainnya">Lainnya</option>
+            </select>
+          </div>
+          <div class="mb-4">
+            <label class="block text-sm font-semibold text-gray-700 mb-1">Deskripsi Lengkap *</label>
+            <textarea id="item-desc" rows="3" required
+              placeholder="Deskripsikan ciri-ciri barang: warna, ukuran, merek, kondisi, isi, dll."
+              class="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 resize-none"></textarea>
+          </div>
+          <div class="mb-4">
+            <label class="block text-sm font-semibold text-gray-700 mb-1">Lokasi Kejadian *</label>
+            <input type="text" id="item-location" placeholder="Contoh: Kantin Gedung A, Parkir Blok B" required
+              class="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+          </div>
+          <div class="mb-4">
+            <label class="block text-sm font-semibold text-gray-700 mb-1">Tanggal Kejadian *</label>
+            <input type="date" id="item-date" required
+              class="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+          </div>
+          <div class="mb-4">
+            <label class="block text-sm font-semibold text-gray-700 mb-1">Nama Pelapor *</label>
+            <input type="text" id="reporter-name" placeholder="Nama kamu" required
+              class="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+          </div>
+          <div class="mb-4">
+            <label class="block text-sm font-semibold text-gray-700 mb-1">Kontak (WA / Email) *</label>
+            <input type="text" id="reporter-contact" placeholder="08xxxxxxxxxx atau nama@email.com" required
+              class="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+          </div>
+
+          <!-- FOTO -->
+          <div class="mb-5">
+            <label class="block text-sm font-semibold text-gray-700 mb-1">
+              Foto Barang <span class="text-gray-400 font-normal">(opsional)</span>
+            </label>
+            <div id="photo-dropzone"
+              class="border-2 border-dashed border-gray-300 rounded-xl p-4 text-center cursor-pointer hover:border-indigo-400 hover:bg-indigo-50 transition"
+              onclick="document.getElementById('item-photo').click()"
+              ondragover="event.preventDefault(); this.classList.add('border-indigo-400','bg-indigo-50')"
+              ondragleave="this.classList.remove('border-indigo-400','bg-indigo-50')"
+              ondrop="handlePhotoDrop(event)">
+              <div id="photo-placeholder">
+                <div class="text-2xl mb-1">📷</div>
+                <p class="text-sm text-gray-500">Klik atau seret foto ke sini</p>
+                <p class="text-xs text-gray-400">JPG, PNG, WEBP — maks 5 MB</p>
+              </div>
+              <div id="photo-preview" class="hidden">
+                <img id="photo-preview-img" src="" alt="preview" class="max-h-40 mx-auto rounded-lg object-contain mb-2" />
+                <button type="button" onclick="removePhoto(event)" class="text-xs text-red-500 hover:underline">Hapus foto</button>
+              </div>
+            </div>
+            <input type="file" id="item-photo" accept="image/*" class="hidden" onchange="handlePhotoSelect(event)" />
+          </div>
+
+          <button type="submit" id="report-submit-btn"
+            class="w-full font-semibold py-3 rounded-xl transition text-sm text-white">
+            Kirim Laporan
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: DETAIL ITEM -->
+  <div id="modal-overlay" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4"
+       onclick="closeModal(event)">
+    <div class="bg-white rounded-2xl shadow-xl max-w-lg w-full relative"
+         style="max-height:90vh; display:flex; flex-direction:column;"
+         onclick="event.stopPropagation()">
+      <button onclick="closeModal()"
+        style="position:absolute;top:10px;right:10px;z-index:20;
+               width:32px;height:32px;border-radius:50%;border:none;cursor:pointer;
+               background:rgba(0,0,0,0.45);color:#fff;font-size:16px;font-weight:700;
+               display:flex;align-items:center;justify-content:center;
+               backdrop-filter:blur(4px);transition:background 0.15s;"
+        onmouseover="this.style.background='rgba(0,0,0,0.7)'"
+        onmouseout="this.style.background='rgba(0,0,0,0.45)'">✕</button>
+      <div style="overflow-y:auto; flex:1; border-radius:inherit;">
+        <div id="modal-content"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: JADWAL PENGAMBILAN (ADMIN) -->
+  <div id="schedule-modal-overlay" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4"
+       onclick="closeScheduleModal(event)">
+    <div class="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 relative" onclick="event.stopPropagation()">
+      <button onclick="closeScheduleModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-700 text-xl">✕</button>
+      <h2 class="text-lg font-bold text-gray-800 mb-1">Jadwalkan Pengambilan</h2>
+      <p class="text-xs text-gray-400 mb-4">Isi detail waktu dan lokasi pengambilan barang.</p>
+      <input type="hidden" id="schedule-claim-id" />
+      <div class="mb-3">
+        <label class="block text-sm font-semibold text-gray-700 mb-1">Tanggal Pengambilan *</label>
+        <input type="date" id="sch-date"
+          class="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+      </div>
+      <div class="mb-3">
+        <label class="block text-sm font-semibold text-gray-700 mb-1">Waktu *</label>
+        <select id="sch-time"
+          class="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400">
+          <option value="">-- Pilih Waktu --</option>
+          <option>08:00 - 09:00</option><option>09:00 - 10:00</option>
+          <option>10:00 - 11:00</option><option>11:00 - 12:00</option>
+          <option>13:00 - 14:00</option><option>14:00 - 15:00</option>
+          <option>15:00 - 16:00</option><option>16:00 - 17:00</option>
+        </select>
+      </div>
+      <div class="mb-3">
+        <label class="block text-sm font-semibold text-gray-700 mb-1">Lokasi Pengambilan *</label>
+        <input type="text" id="sch-location" placeholder="Contoh: Pos Satpam Lobby Gedung A"
+          class="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+      </div>
+      <div class="mb-4">
+        <label class="block text-sm font-semibold text-gray-700 mb-1">Petugas *</label>
+        <input type="text" id="sch-officer" placeholder="Nama petugas yang bertugas"
+          class="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+      </div>
+      <button onclick="confirmSchedule()"
+        class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 rounded-xl transition text-sm">
+        Konfirmasi Jadwal
+      </button>
+    </div>
+  </div>
+
+  <!-- MODAL: VERIFIKASI STATUS BARANG -->
+  <div id="verify-modal-overlay" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4"
+       onclick="closeVerifyModal(event)">
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-md relative" onclick="event.stopPropagation()">
+      <button onclick="closeVerifyModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-700 text-xl">✕</button>
+
+      <div class="px-6 pt-6 pb-2">
+        <div class="flex items-center gap-3 mb-1">
+          <div class="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center text-xl">🔍</div>
+          <div>
+            <h2 class="text-base font-bold text-gray-800">Verifikasi Status Barang</h2>
+            <p class="text-xs text-gray-400">Pilih status sebelum menyelesaikan laporan</p>
+          </div>
+        </div>
+        <input type="hidden" id="verify-item-id-hidden" />
+        <div id="verify-item-label" class="mt-3 bg-gray-50 rounded-xl px-4 py-2.5 text-sm font-semibold text-gray-700 border border-gray-100"></div>
+      </div>
+
+      <div class="px-6 py-4 space-y-3">
+        <!-- Opsi 1: Sudah ditemukan & dikembalikan -->
+        <label id="vopt-found-wrap"
+          class="flex items-start gap-3 border-2 border-gray-200 rounded-2xl p-4 cursor-pointer hover:border-green-400 hover:bg-green-50 transition group">
+          <input type="radio" name="verify-status" value="found" onchange="onVerifyChange()" class="mt-0.5 accent-green-500 flex-shrink-0" />
+          <div>
+            <p class="font-bold text-gray-800 text-sm group-hover:text-green-700">✅ Barang sudah ditemukan & dikembalikan</p>
+            <p class="text-xs text-gray-400 mt-0.5">Barang telah diserahkan kepada pemilik. Isi data pengambilan dan bukti foto.</p>
+          </div>
+        </label>
+
+        <!-- Opsi 2: Dicocokkan dengan laporan temuan -->
+        <label id="vopt-match-wrap"
+          class="flex items-start gap-3 border-2 border-gray-200 rounded-2xl p-4 cursor-pointer hover:border-indigo-400 hover:bg-indigo-50 transition group">
+          <input type="radio" name="verify-status" value="match" onchange="onVerifyChange()" class="mt-0.5 accent-indigo-500 flex-shrink-0" />
+          <div>
+            <p class="font-bold text-gray-800 text-sm group-hover:text-indigo-700">🔗 Cocokkan dengan laporan barang temuan</p>
+            <p class="text-xs text-gray-400 mt-0.5">Ada laporan barang ditemukan yang sesuai. Hubungkan kedua laporan.</p>
+          </div>
+        </label>
+
+        <!-- Opsi 3: Tidak ditemukan → pemusnahan -->
+        <label id="vopt-dispose-wrap"
+          class="flex items-start gap-3 border-2 border-gray-200 rounded-2xl p-4 cursor-pointer hover:border-orange-400 hover:bg-orange-50 transition group">
+          <input type="radio" name="verify-status" value="dispose" onchange="onVerifyChange()" class="mt-0.5 accent-orange-500 flex-shrink-0" />
+          <div>
+            <p class="font-bold text-gray-800 text-sm group-hover:text-orange-700">🗑️ Barang tidak ditemukan → Pemusnahan / Donasi</p>
+            <p class="text-xs text-gray-400 mt-0.5">Laporan ditutup. Proses pemusnahan atau donasi di modul Pemusnahan.</p>
+          </div>
+        </label>
+
+        <!-- Warning box -->
+        <div id="verify-warning" class="hidden bg-orange-50 border border-orange-200 rounded-xl p-3 text-xs text-orange-700">
+          <span id="verify-warning-text"></span>
+        </div>
+      </div>
+
+      <div class="px-6 pb-6 flex gap-3">
+        <button onclick="closeVerifyModal()"
+          class="flex-1 border border-gray-200 hover:bg-gray-50 text-gray-600 font-semibold py-2.5 rounded-xl transition text-sm">
+          Batal
+        </button>
+        <button id="verify-proceed-btn" onclick="proceedVerify()" disabled
+          class="flex-1 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed text-white font-semibold py-2.5 rounded-xl transition text-sm">
+          Lanjut →
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: SELESAIKAN LAPORAN -->
+  <div id="resolve-modal-overlay" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4"
+       onclick="closeResolveModal(event)">
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto relative" onclick="event.stopPropagation()">
+      <div class="sticky top-0 bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between rounded-t-2xl z-10">
+        <div>
+          <h2 class="text-base font-bold text-gray-800">📋 Selesaikan Laporan</h2>
+          <p class="text-xs text-gray-400 mt-0.5">Isi data pengambilan dan upload bukti sebelum menyelesaikan laporan</p>
+        </div>
+        <button onclick="closeResolveModal()" class="text-gray-400 hover:text-gray-700 text-xl ml-4">✕</button>
+      </div>
+
+      <div class="px-6 py-5 space-y-5">
+        <input type="hidden" id="resolve-item-id" />
+
+        <!-- INFO BARANG -->
+        <div id="resolve-item-info" class="bg-gray-50 rounded-xl p-3 text-sm text-gray-700"></div>
+
+        <!-- SECTION: DATA PENGAMBIL -->
+        <div>
+          <div class="flex items-center gap-2 mb-3">
+            <div class="w-6 h-6 bg-indigo-100 rounded-full flex items-center justify-center text-xs font-bold text-indigo-600">1</div>
+            <p class="font-semibold text-gray-700 text-sm">Data Pengambil Barang</p>
+          </div>
+          <div class="space-y-3">
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-semibold text-gray-600 mb-1">Nama Pengambil <span class="text-red-500">*</span></label>
+                <input id="resolve-nama" type="text" placeholder="Nama lengkap pengambil"
+                  class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-400 outline-none" />
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-gray-600 mb-1">No. Identitas / Kontak <span class="text-red-500">*</span></label>
+                <input id="resolve-kontak" type="text" placeholder="KTP / No. HP"
+                  class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-400 outline-none" />
+              </div>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-semibold text-gray-600 mb-1">Tanggal Pengambilan <span class="text-red-500">*</span></label>
+                <input id="resolve-tgl" type="date"
+                  class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-400 outline-none" />
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-gray-600 mb-1">Petugas yang Menyerahkan <span class="text-red-500">*</span></label>
+                <input id="resolve-petugas" type="text" placeholder="Nama petugas"
+                  class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-400 outline-none" />
+              </div>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-gray-600 mb-1">Lokasi Serah Terima <span class="text-red-500">*</span></label>
+              <input id="resolve-lokasi" type="text" placeholder="Misal: Lobi Gedung A, Pos Satpam, dll."
+                class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-400 outline-none" />
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-gray-600 mb-1">Keterangan Tambahan <span class="text-gray-400 font-normal">(opsional)</span></label>
+              <textarea id="resolve-keterangan" rows="2" placeholder="Misal: Barang diserahkan dalam kondisi baik, disaksikan 2 orang saksi..."
+                class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-400 outline-none resize-none"></textarea>
+            </div>
+          </div>
+        </div>
+
+        <!-- SECTION: BUKTI FOTO -->
+        <div>
+          <div class="flex items-center gap-2 mb-3">
+            <div class="w-6 h-6 bg-indigo-100 rounded-full flex items-center justify-center text-xs font-bold text-indigo-600">2</div>
+            <p class="font-semibold text-gray-700 text-sm">Bukti Foto Pengambilan <span class="text-red-500">*</span></p>
+          </div>
+          <div id="resolve-dropzone"
+            class="border-2 border-dashed border-gray-300 rounded-xl p-5 text-center cursor-pointer hover:border-indigo-400 hover:bg-indigo-50 transition"
+            onclick="document.getElementById('resolve-photo-input').click()"
+            ondragover="event.preventDefault(); this.classList.add('border-indigo-400','bg-indigo-50')"
+            ondragleave="this.classList.remove('border-indigo-400','bg-indigo-50')"
+            ondrop="handleResolveDrop(event)">
+            <input type="file" id="resolve-photo-input" accept="image/*" class="hidden" onchange="handleResolveFile(this.files[0])" />
+            <div id="resolve-drop-ph">
+              <div class="text-3xl mb-1">📷</div>
+              <p class="text-sm text-gray-500">Klik atau seret foto ke sini</p>
+              <p class="text-xs text-gray-400 mt-0.5">Foto pengambil bersama barang · JPG, PNG · maks 8 MB</p>
+            </div>
+            <div id="resolve-preview" class="hidden">
+              <img id="resolve-preview-img" src="" alt="preview" class="max-h-44 mx-auto rounded-xl object-contain mb-2" />
+              <button type="button" onclick="removeResolvePhoto(event)" class="text-xs text-red-500 hover:underline">Hapus foto</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ACTIONS -->
+        <div class="flex gap-3 pt-1">
+          <button onclick="closeResolveModal()"
+            class="flex-1 border border-gray-200 hover:bg-gray-50 text-gray-600 font-semibold py-2.5 rounded-xl transition text-sm">
+            Batal
+          </button>
+          <button onclick="submitResolve()"
+            class="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold py-2.5 rounded-xl transition text-sm">
+            ✅ Selesaikan Laporan
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: TIKET -->
+  <div id="ticket-modal-overlay" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4"
+       onclick="closeTicketModal(event)">
+    <div class="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6 relative" onclick="event.stopPropagation()">
+      <button onclick="closeTicketModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-700 text-xl">✕</button>
+      <div id="ticket-content"></div>
+      <button onclick="printTicket()"
+        class="mt-4 w-full border border-indigo-300 text-indigo-600 hover:bg-indigo-50 font-semibold py-2.5 rounded-xl transition text-sm">
+        🖨️ Cetak / Simpan Tiket
+      </button>
+    </div>
+  </div>
+
+  <!-- MODAL: PEMUSNAHAN / DONASI BARANG -->
+  <div id="disposal-modal-overlay" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4"
+       onclick="closeDisposalModal(event)">
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto relative" onclick="event.stopPropagation()">
+      <div class="sticky top-0 bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between rounded-t-2xl z-10">
+        <div>
+          <h2 class="text-base font-bold text-gray-800">🗑️ Proses Pemusnahan / Donasi</h2>
+          <p class="text-xs text-gray-400 mt-0.5">Isi formulir dan upload bukti tindakan</p>
+        </div>
+        <button onclick="closeDisposalModal()" class="text-gray-400 hover:text-gray-700 text-xl ml-4">✕</button>
+      </div>
+
+      <div class="px-6 py-5 space-y-5">
+        <input type="hidden" id="disposal-item-id" />
+
+        <!-- Info barang -->
+        <div id="disposal-item-info" class="bg-gray-50 rounded-xl p-3 text-sm text-gray-700"></div>
+
+        <!-- Tipe tindakan -->
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-2">Jenis Tindakan <span class="text-red-500">*</span></label>
+          <div class="grid grid-cols-2 gap-3">
+            <label id="dtype-destroyed-wrap"
+              class="flex items-center gap-3 border-2 border-gray-200 rounded-xl p-3 cursor-pointer hover:border-red-400 transition peer-checked:border-red-500">
+              <input type="radio" name="disposal-type" id="dtype-destroyed" value="destroyed" onchange="onDisposalTypeChange()" class="accent-red-500" />
+              <div>
+                <p class="font-semibold text-gray-800 text-sm">🔥 Dimusnahkan</p>
+                <p class="text-xs text-gray-400">Barang dihancurkan / dibuang</p>
+              </div>
+            </label>
+            <label id="dtype-donated-wrap"
+              class="flex items-center gap-3 border-2 border-gray-200 rounded-xl p-3 cursor-pointer hover:border-blue-400 transition">
+              <input type="radio" name="disposal-type" id="dtype-donated" value="donated" onchange="onDisposalTypeChange()" class="accent-blue-500" />
+              <div>
+                <p class="font-semibold text-gray-800 text-sm">💙 Didonasikan</p>
+                <p class="text-xs text-gray-400">Diserahkan ke yayasan / penerima</p>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <!-- Field donasi (muncul jika pilih donasi) -->
+        <div id="disposal-donate-fields" class="hidden space-y-3">
+          <div>
+            <label class="block text-xs font-semibold text-gray-600 mb-1">Nama Penerima Donasi <span class="text-red-500">*</span></label>
+            <input id="disposal-recipient" type="text" placeholder="Nama yayasan / lembaga / perorangan"
+              class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-blue-400 outline-none" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-gray-600 mb-1">Alamat / Kontak Penerima</label>
+            <input id="disposal-recipient-addr" type="text" placeholder="Alamat atau nomor telepon penerima"
+              class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-blue-400 outline-none" />
+          </div>
+        </div>
+
+        <!-- Data umum -->
+        <div class="space-y-3">
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-semibold text-gray-600 mb-1">Tanggal Tindakan <span class="text-red-500">*</span></label>
+              <input id="disposal-date" type="date"
+                class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-orange-400 outline-none" />
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-gray-600 mb-1">Petugas Pelaksana <span class="text-red-500">*</span></label>
+              <input id="disposal-officer" type="text" placeholder="Nama petugas"
+                class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-orange-400 outline-none" />
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-gray-600 mb-1">Alasan / Dasar Tindakan <span class="text-red-500">*</span></label>
+            <textarea id="disposal-reason" rows="2"
+              placeholder="Misal: Barang tidak diklaim selama 30 hari, kondisi rusak, tidak ada laporan hilang yang cocok..."
+              class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-orange-400 outline-none resize-none"></textarea>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-gray-600 mb-1">Saksi / Catatan Tambahan <span class="text-gray-400 font-normal">(opsional)</span></label>
+            <input id="disposal-witness" type="text" placeholder="Nama saksi atau catatan lain"
+              class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-orange-400 outline-none" />
+          </div>
+        </div>
+
+        <!-- Foto bukti -->
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-1">Foto Bukti Tindakan <span class="text-red-500">*</span></label>
+          <div id="disposal-dropzone"
+            class="border-2 border-dashed border-gray-300 rounded-xl p-5 text-center cursor-pointer hover:border-orange-400 hover:bg-orange-50 transition"
+            onclick="document.getElementById('disposal-photo-input').click()"
+            ondragover="event.preventDefault(); this.classList.add('border-orange-400','bg-orange-50')"
+            ondragleave="this.classList.remove('border-orange-400','bg-orange-50')"
+            ondrop="handleDisposalDrop(event)">
+            <input type="file" id="disposal-photo-input" accept="image/*" class="hidden" onchange="handleDisposalFile(this.files[0])" />
+            <div id="disposal-drop-ph">
+              <div class="text-3xl mb-1">📷</div>
+              <p class="text-sm text-gray-500">Klik atau seret foto ke sini</p>
+              <p class="text-xs text-gray-400 mt-0.5">Foto proses pemusnahan/donasi · JPG, PNG · maks 8 MB</p>
+            </div>
+            <div id="disposal-preview" class="hidden">
+              <img id="disposal-preview-img" src="" alt="preview" class="max-h-44 mx-auto rounded-xl object-contain mb-2" />
+              <button type="button" onclick="removeDisposalPhoto(event)" class="text-xs text-red-500 hover:underline">Hapus foto</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Pernyataan -->
+        <div class="bg-orange-50 border border-orange-200 rounded-xl p-3 flex gap-2">
+          <input type="checkbox" id="disposal-confirm-check" class="mt-0.5 accent-orange-500 flex-shrink-0" />
+          <label for="disposal-confirm-check" class="text-xs text-orange-700 cursor-pointer">
+            Saya menyatakan bahwa tindakan ini dilakukan sesuai prosedur yang berlaku, telah melalui masa tunggu yang ditetapkan, dan semua data yang diisi adalah benar dan dapat dipertanggungjawabkan.
+          </label>
+        </div>
+
+        <!-- Actions -->
+        <div class="flex gap-3">
+          <button onclick="closeDisposalModal()"
+            class="flex-1 border border-gray-200 hover:bg-gray-50 text-gray-600 font-semibold py-2.5 rounded-xl transition text-sm">
+            Batal
+          </button>
+          <button onclick="submitDisposal()"
+            class="flex-1 bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2.5 rounded-xl transition text-sm">
+            🗑️ Proses Tindakan
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: BUKTI PENGAMBILAN (ADMIN) -->
+  <div id="bukti-modal-overlay" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4"
+       onclick="closeBuktiModal(event)">
+    <div class="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 relative" onclick="event.stopPropagation()">
+      <button onclick="closeBuktiModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-700 text-xl">✕</button>
+      <div class="flex items-center gap-3 mb-4">
+        <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center text-xl">📸</div>
+        <div>
+          <h2 class="text-base font-bold text-gray-800">Bukti Pengambilan Barang</h2>
+          <p class="text-xs text-gray-400">Upload foto serah terima sebagai bukti</p>
+        </div>
+      </div>
+      <input type="hidden" id="bukti-claim-id" />
+
+      <!-- Photo upload -->
+      <label class="block text-sm font-semibold text-gray-700 mb-1">
+        Foto Bukti Pengambilan <span class="text-red-500">*</span>
+      </label>
+      <div id="bukti-dropzone"
+        class="border-2 border-dashed border-gray-300 rounded-xl p-4 text-center cursor-pointer hover:border-green-400 hover:bg-green-50 transition mb-3"
+        onclick="document.getElementById('bukti-photo-input').click()"
+        ondragover="event.preventDefault(); this.classList.add('border-green-400','bg-green-50')"
+        ondragleave="this.classList.remove('border-green-400','bg-green-50')"
+        ondrop="handleBuktiDrop(event)">
+        <input type="file" id="bukti-photo-input" accept="image/*" class="hidden" onchange="handleBuktiFile(this.files[0])" />
+        <div id="bukti-drop-placeholder">
+          <div class="text-3xl mb-1">📷</div>
+          <p class="text-sm text-gray-500">Klik atau seret foto ke sini</p>
+          <p class="text-xs text-gray-400">Foto pengklaim menerima barang · JPG, PNG</p>
+        </div>
+        <div id="bukti-preview" class="hidden">
+          <img id="bukti-preview-img" src="" alt="preview" class="max-h-40 mx-auto rounded-lg object-contain mb-2" />
+          <button type="button" onclick="removeBuktiPhoto(event)" class="text-xs text-red-500 hover:underline">Hapus foto</button>
+        </div>
+      </div>
+
+      <!-- Catatan -->
+      <label class="block text-sm font-semibold text-gray-700 mb-1">Catatan Serah Terima <span class="text-gray-400 font-normal">(opsional)</span></label>
+      <textarea id="bukti-catatan" rows="2" placeholder="Misal: Diserahkan langsung kepada pemilik di lobi, disaksikan petugas keamanan..."
+        class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-green-400 outline-none resize-none mb-4"></textarea>
+
+      <div class="flex gap-2">
+        <button onclick="closeBuktiModal()"
+          class="flex-1 border border-gray-200 hover:bg-gray-50 text-gray-600 font-semibold py-2.5 rounded-xl transition text-sm">
+          Batal
+        </button>
+        <button onclick="confirmBukti()"
+          class="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold py-2.5 rounded-xl transition text-sm">
+          ✅ Konfirmasi Selesai
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST -->
+  <div id="toast" class="fixed bottom-6 right-6 z-50 hidden">
+    <div id="toast-inner" class="px-5 py-3 rounded-xl text-white text-sm font-medium shadow-lg"></div>
+  </div>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+  <!-- Loading Screen -->
+  <div id="fb-loading" style="position:fixed;inset:0;background:#fff;z-index:99999;
+       display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;">
+    <div style="font-size:52px;">🔍</div>
+    <p style="font-size:18px;font-weight:800;color:#4f46e5;margin:0;">Lost & Found</p>
+    <p id="fb-loading-msg" style="font-size:13px;color:#9ca3af;margin:0;">Menghubungkan ke database...</p>
+    <div style="width:220px;height:5px;background:#e5e7eb;border-radius:99px;overflow:hidden;margin-top:4px;">
+      <div style="height:100%;background:#4f46e5;border-radius:99px;animation:lbar 1.4s ease-in-out infinite;"></div>
+    </div>
+  </div>
+  <style>
+    @keyframes lbar {
+      0%   { width:0%;   margin-left:0%; }
+      50%  { width:55%;  margin-left:22%; }
+      100% { width:0%;   margin-left:100%; }
+    }
+  </style>
+
+  <script src="app.js"></script>
+</body>
+</html>
