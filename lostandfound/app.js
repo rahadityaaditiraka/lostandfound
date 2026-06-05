@@ -106,24 +106,29 @@ function refreshCurrentPage() {
 }
 
 // ============================================================
-// AUTH — Simple Username/Password System
+// AUTH — Firebase Authentication
 // ============================================================
-const ACCOUNTS = {
-  superadmin:   { password: '@m4dorblackLetterf0nt', role: 'admin', name: 'Super Admin' },
-  rinkoperator: { password: 'rinkoperator@123',      role: 'user',  name: 'Rink Operator' }
+// Role berdasarkan email prefix (password dikelola Firebase)
+const ROLE_MAP = {
+  'superadmin':   { role: 'admin', name: 'Super Admin' },
+  'rinkoperator': { role: 'user',  name: 'Rink Operator' }
 };
+const EMAIL_DOMAIN = '@lostandfound.app';
 
 let currentUser     = null;
 let currentUserRole = 'guest';
 
+function getUsernameFromEmail(email) {
+  return email ? email.replace(EMAIL_DOMAIN, '') : null;
+}
+
+function getRoleFromEmail(email) {
+  const username = getUsernameFromEmail(email);
+  return ROLE_MAP[username] || null;
+}
+
 function restoreSession() {
-  try {
-    const saved = localStorage.getItem('lf_session');
-    if (saved) {
-      currentUser     = JSON.parse(saved);
-      currentUserRole = currentUser.role;
-    }
-  } catch { currentUser = null; currentUserRole = 'guest'; }
+  // Firebase Auth handles session — tidak perlu localStorage
 }
 
 function openAuthModal() {
@@ -139,8 +144,10 @@ function closeAuthModal(e) {
   document.getElementById('auth-modal-overlay').classList.add('hidden');
 }
 
-function loginUser() {
-  const username = document.getElementById('login-username').value.trim().toLowerCase();
+async function loginUser() {
+  // Strip domain jika user tidak sengaja input email (misal: user@domain.com → user)
+  let username = document.getElementById('login-username').value.trim().toLowerCase();
+  if (username.includes('@')) username = username.split('@')[0];
   const password = document.getElementById('login-password').value;
   const errEl    = document.getElementById('login-error');
   errEl.classList.add('hidden');
@@ -149,36 +156,27 @@ function loginUser() {
     errEl.textContent = 'Username dan password wajib diisi.';
     errEl.classList.remove('hidden'); return;
   }
-  const account = ACCOUNTS[username];
-  if (!account || account.password !== password) {
-    errEl.textContent = 'Username atau password salah.';
+
+  if (!ROLE_MAP[username]) {
+    errEl.textContent = 'Username tidak ditemukan.';
     errEl.classList.remove('hidden'); return;
   }
 
-  currentUser     = { username, name: account.name, role: account.role };
-  currentUserRole = account.role;
-  localStorage.setItem('lf_session', JSON.stringify(currentUser));
-  document.getElementById('auth-modal-overlay').classList.add('hidden');
-
-  if (currentUserRole === 'admin') {
-    adminLoggedIn = true;
-    setAdminNav(true);
-    showToast(`👑 Selamat datang, ${account.name}!`, 'bg-indigo-600');
-  } else {
-    showToast(`🙋 Selamat datang, ${account.name}!`, 'bg-green-600');
+  const email = username + EMAIL_DOMAIN;
+  try {
+    await firebase.auth().signInWithEmailAndPassword(email, password);
+    document.getElementById('auth-modal-overlay').classList.add('hidden');
+  } catch(err) {
+    errEl.textContent = 'Username atau password salah.';
+    errEl.classList.remove('hidden');
   }
-  applyRoleUI();
 }
 
 function logoutUser() {
-  currentUser     = null;
-  currentUserRole = 'guest';
-  adminLoggedIn   = false;
-  localStorage.removeItem('lf_session');
-  setAdminNav(false);
-  applyRoleUI();
-  showToast('Berhasil keluar.', 'bg-gray-600');
-  showPage('lost');
+  firebase.auth().signOut().then(() => {
+    showToast('Berhasil keluar.', 'bg-gray-600');
+    showPage('lost');
+  });
 }
 
 function applyRoleUI() {
@@ -212,10 +210,11 @@ function updateAuthUI() {
   const userInfo = document.getElementById('user-info');
   const nameDisp = document.getElementById('user-email-display');
   if (currentUser) {
+    const info = getRoleFromEmail(currentUser.email);
     btnLogin.classList.add('hidden');
     userInfo.classList.remove('hidden');
     userInfo.classList.add('flex');
-    nameDisp.textContent = currentUser.name + (currentUserRole === 'admin' ? ' 👑' : ' 🙋');
+    nameDisp.textContent = (info?.name || currentUser.email) + (currentUserRole === 'admin' ? ' 👑' : ' 🙋');
   } else {
     btnLogin.classList.remove('hidden');
     userInfo.classList.add('hidden');
@@ -237,15 +236,36 @@ function launchApp() {
 }
 
 function initFirebase() {
-  // Restore session & cache PERTAMA
-  restoreSession();
+  // Init Firebase PERTAMA
+  try {
+    firebase.initializeApp(FIREBASE_CONFIG);
+    _db = firebase.firestore();
+  } catch(e) {
+    console.error('Firebase init error:', e);
+  }
 
+  // Firebase Auth — pantau status login (setelah initializeApp)
+  firebase.auth().onAuthStateChanged(user => {
+    currentUser = user;
+    if (user) {
+      const info = getRoleFromEmail(user.email);
+      currentUserRole = info ? info.role : 'guest';
+      adminLoggedIn   = currentUserRole === 'admin';
+      if (adminLoggedIn) setAdminNav(true);
+    } else {
+      currentUser     = null;
+      currentUserRole = 'guest';
+      adminLoggedIn   = false;
+      setAdminNav(false);
+    }
+    if (_appReady) applyRoleUI();
+  });
+
+  // Load cache dari localStorage — app langsung tampil
   const cachedItems  = localStorage.getItem('lf_items_cache');
   const cachedClaims = localStorage.getItem('lf_claims_cache');
   if (cachedItems)  try { _items  = JSON.parse(cachedItems);  } catch(e){}
   if (cachedClaims) try { _claims = JSON.parse(cachedClaims); } catch(e){}
-
-  if (currentUserRole === 'admin') adminLoggedIn = true;
 
   // Tampilkan app LANGSUNG dari cache
   launchApp();
@@ -253,28 +273,26 @@ function initFirebase() {
   // Timeout paksa: 4 detik maks loading
   setTimeout(() => launchApp(), 4000);
 
-  // Init Firebase di background
-  try {
-    firebase.initializeApp(FIREBASE_CONFIG);
-    _db = firebase.firestore();
-  } catch(e) {
-    console.error('Firebase init error:', e);
-    return;
-  }
-
   // Timeout fallback: jika Firebase lambat, app sudah jalan dari cache
   let itemsOk = false, claimsOk = false;
 
   _db.collection('items').onSnapshot(snap => {
     _items = snap.docs.map(d => d.data());
-    localStorage.setItem('lf_items_cache', JSON.stringify(_items));
+    // Simpan cache tanpa foto (foto terlalu besar untuk localStorage)
+    try {
+      const lite = _items.map(i => ({...i, photo: null, resolveData: i.resolveData ? {...i.resolveData, photo: null} : null}));
+      localStorage.setItem('lf_items_cache', JSON.stringify(lite));
+    } catch(e) { localStorage.removeItem('lf_items_cache'); }
     itemsOk = true;
     if (_appReady) refreshCurrentPage();
   }, err => console.error('items:', err));
 
   _db.collection('claims').onSnapshot(snap => {
     _claims = snap.docs.map(d => d.data());
-    localStorage.setItem('lf_claims_cache', JSON.stringify(_claims));
+    try {
+      const lite = _claims.map(c => ({...c, buktiPhoto: null, signature: null}));
+      localStorage.setItem('lf_claims_cache', JSON.stringify(lite));
+    } catch(e) { localStorage.removeItem('lf_claims_cache'); }
     claimsOk = true;
     if (_appReady) refreshCurrentPage();
   }, err => console.error('claims:', err));
@@ -543,16 +561,20 @@ function renderAll() {
 }
 
 // ============================================================
-// ITEM PAGE (LOST / FOUND) — SHARED RENDERER
+// ITEM PAGE (LOST / FOUND) — SHARED RENDERER + PAGINATION
 // ============================================================
+const ITEMS_PER_PAGE = 9;
 let searchDebounce = {};
+let currentPage = { lost: 1, found: 1 };
 
 function renderItemPage(type) {
+  currentPage[type] = 1; // reset ke halaman 1 saat filter/search berubah
   clearTimeout(searchDebounce[type]);
   searchDebounce[type] = setTimeout(() => _renderItemPage(type), 150);
 }
 
-function _renderItemPage(type) {
+function _renderItemPage(type, page) {
+  if (page) currentPage[type] = page;
   const query    = document.getElementById(`${type}-search`).value.trim();
   const category = document.getElementById(`${type}-category`).value;
   const statusF  = document.getElementById(`${type}-status-filter`).value;
@@ -560,7 +582,6 @@ function _renderItemPage(type) {
   let items = getItems().filter(i => i.type === type);
   if (category) items = items.filter(i => i.category === category);
   if (statusF)  items = items.filter(i => i.status === statusF);
-  else if (statusF === '') { /* all */ }
 
   const queryTokens = tokenize(query);
   const hint = document.getElementById(`${type}-hint`);
@@ -577,21 +598,50 @@ function _renderItemPage(type) {
   }
 
   // Stat
-  const all = getItems().filter(i => i.type === type);
+  const all  = getItems().filter(i => i.type === type);
   const open = all.filter(i => i.status === 'open').length;
   document.getElementById(`${type}-stat`).textContent =
     `${open} aktif · ${all.length - open} selesai · total ${all.length}`;
 
-  const container = document.getElementById(`${type}-results`);
-  const empty     = document.getElementById(`${type}-empty`);
+  const container  = document.getElementById(`${type}-results`);
+  const empty      = document.getElementById(`${type}-empty`);
+  const paginationEl = document.getElementById(`${type}-pagination`);
 
   if (scored.length === 0) {
     container.innerHTML = '';
+    paginationEl.innerHTML = '';
     empty.classList.remove('hidden');
     return;
   }
   empty.classList.add('hidden');
-  container.innerHTML = scored.map(r => renderCard(r.item, r.score, r.matched, queryTokens.length>0)).join('');
+
+  // Pagination
+  const totalPages = Math.ceil(scored.length / ITEMS_PER_PAGE);
+  const cp = Math.min(currentPage[type], totalPages);
+  currentPage[type] = cp;
+  const start = (cp - 1) * ITEMS_PER_PAGE;
+  const pageItems = scored.slice(start, start + ITEMS_PER_PAGE);
+
+  container.innerHTML = pageItems.map(r => renderCard(r.item, r.score, r.matched, queryTokens.length > 0)).join('');
+
+  // Render pagination controls
+  if (totalPages <= 1) { paginationEl.innerHTML = ''; return; }
+
+  const btnClass = 'px-3 py-1.5 rounded-lg text-sm font-semibold transition border';
+  let pages = '';
+  for (let i = 1; i <= totalPages; i++) {
+    const active = i === cp;
+    pages += `<button onclick="_renderItemPage('${type}',${i})"
+      class="${btnClass} ${active ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-600 border-gray-200 hover:bg-indigo-50'}">${i}</button>`;
+  }
+
+  paginationEl.innerHTML = `
+    <button onclick="_renderItemPage('${type}',${cp-1})" ${cp===1?'disabled':''}
+      class="${btnClass} bg-white text-gray-600 border-gray-200 hover:bg-indigo-50 disabled:opacity-40">‹ Prev</button>
+    ${pages}
+    <button onclick="_renderItemPage('${type}',${cp+1})" ${cp===totalPages?'disabled':''}
+      class="${btnClass} bg-white text-gray-600 border-gray-200 hover:bg-indigo-50 disabled:opacity-40">Next ›</button>
+    <span class="text-xs text-gray-400 ml-1">Halaman ${cp} / ${totalPages}</span>`;
 }
 
 // ============================================================
@@ -675,11 +725,13 @@ let _tfReady    = false;
 async function loadMobileNet() {
   try {
     if (typeof mobilenet === 'undefined' || typeof tf === 'undefined') return;
+    // Paksa CPU backend agar tidak ada WebGL warning
+    await tf.setBackend('cpu');
+    await tf.ready();
     _mobileNet = await mobilenet.load({ version: 2, alpha: 0.5 });
     _tfReady = true;
-    console.log('MobileNet loaded ✅');
   } catch(e) {
-    console.warn('MobileNet gagal load:', e);
+    console.warn('MobileNet fallback ke pHash');
   }
 }
 
@@ -1968,14 +2020,111 @@ function setAdminNav(loggedIn) {
 
 
 
+let _charts = {};
+
 function adminTab(tab) {
   currentAdminTab = tab;
-  ['lost','found','claims','users'].forEach(t => {
+  ['dashboard','lost','found','claims','users'].forEach(t => {
     document.getElementById(`admin-tab-${t}`).classList.toggle('hidden', t!==tab);
     document.getElementById(`atab-${t}`).classList.toggle('active', t===tab);
   });
-  if (tab==='claims') renderAdminClaims(currentClaimFilter);
-  if (tab==='users')  renderUserList();
+  if (tab==='claims')    renderAdminClaims(currentClaimFilter);
+  if (tab==='users')     renderUserList();
+  if (tab==='dashboard') renderDashboard();
+}
+
+function renderDashboard() {
+  const items  = getItems();
+  const claims = getClaims();
+
+  // Summary
+  const lost     = items.filter(i => i.type === 'lost');
+  const found    = items.filter(i => i.type === 'found');
+  const resolved = items.filter(i => i.status === 'resolved' || i.status === 'disposed');
+  document.getElementById('dash-total-lost').textContent     = lost.length;
+  document.getElementById('dash-total-found').textContent    = found.length;
+  document.getElementById('dash-total-resolved').textContent = resolved.length;
+  document.getElementById('dash-total-claims').textContent   = claims.length;
+
+  // Chart: Laporan per Bulan (6 bulan terakhir)
+  const months = [];
+  const lostData = [], foundData = [];
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date();
+    d.setMonth(d.getMonth() - i);
+    const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    months.push(d.toLocaleDateString('id-ID',{month:'short',year:'2-digit'}));
+    lostData.push(lost.filter(it => (it.date||'').startsWith(key)).length);
+    foundData.push(found.filter(it => (it.date||'').startsWith(key)).length);
+  }
+  renderChart('chart-monthly', 'bar', {
+    labels: months,
+    datasets: [
+      { label:'Hilang',    data: lostData,  backgroundColor:'rgba(239,68,68,0.7)'  },
+      { label:'Ditemukan', data: foundData, backgroundColor:'rgba(34,197,94,0.7)'  }
+    ]
+  });
+
+  // Chart: Status laporan
+  const open     = items.filter(i => i.status==='open').length;
+  const disposed = items.filter(i => i.status==='disposed').length;
+  renderChart('chart-status', 'doughnut', {
+    labels: ['Aktif','Selesai','Dimusnahkan'],
+    datasets: [{ data:[open, resolved.length - disposed, disposed],
+      backgroundColor:['#6366f1','#22c55e','#f97316'] }]
+  });
+
+  // Chart: Kategori
+  const catCount = {};
+  items.forEach(i => { catCount[i.category] = (catCount[i.category]||0) + 1; });
+  const catKeys = Object.keys(catCount).sort((a,b) => catCount[b]-catCount[a]).slice(0,7);
+  const colors  = ['#6366f1','#22c55e','#f97316','#ec4899','#14b8a6','#f59e0b','#8b5cf6'];
+  renderChart('chart-category', 'bar', {
+    labels: catKeys.map(k => k.charAt(0).toUpperCase()+k.slice(1)),
+    datasets: [{ label:'Jumlah', data: catKeys.map(k=>catCount[k]),
+      backgroundColor: colors }]
+  }, { indexAxis:'y' });
+
+  // Chart: Status klaim
+  const claimStatus = { pending:0, approved:0, rejected:0, completed:0 };
+  claims.forEach(c => { if (claimStatus[c.status]!==undefined) claimStatus[c.status]++; });
+  renderChart('chart-claims', 'doughnut', {
+    labels: ['Menunggu','Dijadwalkan','Ditolak','Selesai'],
+    datasets: [{ data: Object.values(claimStatus),
+      backgroundColor:['#f59e0b','#6366f1','#ef4444','#22c55e'] }]
+  });
+
+  // Top locations
+  const locCount = {};
+  items.forEach(i => { if(i.location) locCount[i.location] = (locCount[i.location]||0)+1; });
+  const topLocs = Object.entries(locCount).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  const maxLoc  = topLocs[0]?.[1] || 1;
+  document.getElementById('dash-locations').innerHTML = topLocs.length ? topLocs.map(([loc,cnt]) => `
+    <div>
+      <div class="flex items-center justify-between text-sm mb-1">
+        <span class="text-gray-700 font-medium">📍 ${escapeHtml(loc)}</span>
+        <span class="text-gray-500 text-xs font-semibold">${cnt} laporan</span>
+      </div>
+      <div class="bg-gray-100 rounded-full h-2 overflow-hidden">
+        <div class="h-2 bg-indigo-500 rounded-full" style="width:${Math.round(cnt/maxLoc*100)}%"></div>
+      </div>
+    </div>`).join('') : '<p class="text-sm text-gray-400">Belum ada data lokasi.</p>';
+}
+
+function renderChart(id, type, data, extraOptions = {}) {
+  const canvas = document.getElementById(id);
+  if (!canvas) return;
+  if (_charts[id]) { _charts[id].destroy(); }
+  _charts[id] = new Chart(canvas, {
+    type,
+    data,
+    options: {
+      responsive: true,
+      plugins: { legend: { position: type==='doughnut'?'right':'top', labels:{ boxWidth:12, font:{size:11} } } },
+      scales: type==='doughnut' ? {} : { x:{ grid:{display:false} }, y:{ beginAtZero:true, ticks:{stepSize:1} } },
+      ...extraOptions
+    }
+  });
 }
 
 async function renderUserList() {
@@ -2291,6 +2440,72 @@ function confirmBukti() {
   renderAdmin();
   renderAdminClaims(currentClaimFilter);
   renderItemPage('lost'); renderItemPage('found');
+}
+
+// ============================================================
+// EXPORT CSV
+// ============================================================
+function exportCSV(type) {
+  let rows = [], filename = '';
+
+  if (type === 'lost' || type === 'found') {
+    const items = getItems().filter(i => i.type === type);
+    if (!items.length) { showToast('Tidak ada data untuk diexport', 'bg-red-500'); return; }
+
+    filename = type === 'lost' ? 'barang_hilang' : 'barang_ditemukan';
+    rows.push(['No','Nama Barang','Kategori','Deskripsi','Lokasi','Tanggal','Pelapor','Kontak','Status','Tanggal Lapor']);
+    items.forEach((item, i) => {
+      rows.push([
+        i + 1,
+        item.name,
+        item.category,
+        item.desc,
+        item.location,
+        item.date,
+        item.reporter,
+        item.contact,
+        item.status === 'resolved' ? 'Selesai' : item.status === 'disposed' ? 'Dimusnahkan' : 'Aktif',
+        formatDate(item.createdAt)
+      ]);
+    });
+
+  } else if (type === 'claims') {
+    const claims = getClaims();
+    if (!claims.length) { showToast('Tidak ada data untuk diexport', 'bg-red-500'); return; }
+
+    filename = 'data_klaim';
+    rows.push(['No','Nama Pengklaim','Kontak','Nama Barang','Status Klaim','Tanggal Klaim','Jadwal Ambil','Lokasi Ambil','Petugas']);
+    claims.forEach((c, i) => {
+      const item = getItems().find(it => it.id === c.itemId);
+      const statusMap = { pending:'Menunggu', approved:'Dijadwalkan', rejected:'Ditolak', completed:'Selesai' };
+      rows.push([
+        i + 1,
+        c.claimantName,
+        c.claimantContact,
+        item ? item.name : '-',
+        statusMap[c.status] || c.status,
+        formatDate(c.createdAt),
+        c.pickupDate ? formatDate(c.pickupDate) : '-',
+        c.pickupLocation || '-',
+        c.pickupOfficer || '-'
+      ]);
+    });
+  }
+
+  // Generate CSV
+  const csvContent = rows.map(row =>
+    row.map(cell => `"${String(cell ?? '').replace(/"/g, '""')}"`).join(',')
+  ).join('\n');
+
+  // Tambah BOM agar Excel bisa baca karakter Indonesia
+  const blob = new Blob(['﻿' + csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url  = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href     = url;
+  link.download = `${filename}_${new Date().toISOString().slice(0,10)}.csv`;
+  link.click();
+  URL.revokeObjectURL(url);
+  showToast('✅ File CSV berhasil didownload!', 'bg-green-600');
 }
 
 function deleteItem(id) {
