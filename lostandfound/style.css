@@ -1,94 +1,227 @@
-/* Nav buttons */
-.nav-btn { color: rgba(255,255,255,0.8); }
-.nav-btn:hover, .nav-btn.active { background: rgba(255,255,255,0.2); color: #fff; }
+/* ============================================================
+   DESIGN TOKENS
+   ============================================================ */
+:root {
+  --primary:    #4f46e5;
+  --primary-d:  #4338ca;
+  --primary-l:  #eef2ff;
+  --success:    #16a34a;
+  --danger:     #dc2626;
+  --text:       #0f172a;
+  --text-2:     #475569;
+  --text-3:     #94a3b8;
+  --border:     #e2e8f0;
+  --card:       #ffffff;
+  --bg:         #f8fafc;
+  --radius:     16px;
+  --radius-sm:  10px;
+  --shadow-sm:  0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
+  --shadow:     0 4px 16px rgba(0,0,0,.08);
+  --shadow-lg:  0 8px 32px rgba(0,0,0,.10);
+}
 
-/* Filter buttons */
-.filter-btn { background: white; color: #6b7280; }
-.filter-btn:hover { background: #eef2ff; color: #4f46e5; border-color: #a5b4fc; }
-.filter-btn.active { background: #4f46e5; color: white; border-color: #4f46e5; }
+/* ============================================================
+   BASE
+   ============================================================ */
+body { background: var(--bg); color: var(--text); }
 
-/* Card hover */
-.item-card { transition: transform 0.15s, box-shadow 0.15s; overflow: hidden; }
-.item-card:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(0,0,0,0.1); }
+/* ============================================================
+   NAVBAR
+   ============================================================ */
+nav { background: var(--primary) !important; box-shadow: 0 2px 12px rgba(79,70,229,.35); }
+.nav-btn { color: rgba(255,255,255,.75); border-radius: 8px; transition: background .15s, color .15s; }
+.nav-btn:hover  { background: rgba(255,255,255,.15); color: #fff; }
+.nav-btn.active { background: rgba(255,255,255,.2);  color: #fff; font-weight: 600; }
+
+/* ============================================================
+   CARDS
+   ============================================================ */
+.item-card {
+  background: var(--card);
+  border: 1px solid var(--border) !important;
+  border-radius: var(--radius) !important;
+  box-shadow: var(--shadow-sm);
+  transition: transform .18s ease, box-shadow .18s ease;
+  overflow: hidden;
+}
+.item-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(79,70,229,.12);
+  border-color: #c7d2fe !important;
+}
 .item-card img:first-child { display: block; width: 100%; height: auto; }
 
-/* Score bar */
-.score-bar-bg { background: #e5e7eb; border-radius: 999px; height: 6px; overflow: hidden; }
-.score-bar-fill { height: 100%; border-radius: 999px; transition: width 0.4s ease; }
+/* ============================================================
+   BADGES
+   ============================================================ */
+.badge-lost      { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
+.badge-found     { background: #f0fdf4; color: #16a34a; border: 1px solid #bbf7d0; }
+.badge-resolved  { background: #f8fafc; color: #64748b; border: 1px solid var(--border); }
+.badge-matched   { background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; }
+.badge-pending   { background: #fffbeb; color: #d97706; border: 1px solid #fde68a; }
+.badge-approved  { background: #eff6ff; color: #2563eb; border: 1px solid #bfdbfe; }
+.badge-rejected  { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
+.badge-completed { background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; }
+.badge-disposed  { background: #fff7ed; color: #c2410c; border: 1px solid #fed7aa; }
+.badge-destroyed { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+.badge-donated   { background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; }
 
-/* Badge */
-.badge-lost { background: #fee2e2; color: #dc2626; }
-.badge-found { background: #dcfce7; color: #16a34a; }
-.badge-resolved { background: #f3f4f6; color: #6b7280; }
+/* ============================================================
+   FILTER / TAB BUTTONS
+   ============================================================ */
+.filter-btn { background: var(--card); color: var(--text-2); border: 1px solid var(--border); }
+.filter-btn:hover  { background: var(--primary-l); color: var(--primary); border-color: #a5b4fc; }
+.filter-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
 
-/* Highlight matched text */
-.highlight { background: #fef08a; border-radius: 2px; padding: 0 1px; }
+.claim-tab { color: var(--text-2); background: transparent; border-radius: 10px; transition: all .15s; }
+.claim-tab.active { background: var(--primary); color: #fff; }
 
-/* Toast animation */
+.admin-tab { background: var(--card); color: var(--text-2); transition: all .15s; }
+.admin-tab:hover  { background: var(--primary-l); color: var(--primary); border-color: #a5b4fc; }
+.admin-tab.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+.claim-filter-btn { background: var(--card); color: var(--text-2); }
+.claim-filter-btn:hover  { background: var(--primary-l); color: var(--primary); border-color: #a5b4fc; }
+.claim-filter-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+/* ============================================================
+   SCORE BAR
+   ============================================================ */
+.score-bar-bg  { background: #e2e8f0; border-radius: 999px; height: 5px; overflow: hidden; }
+.score-bar-fill{ height: 100%; border-radius: 999px; transition: width .4s ease; }
+
+/* ============================================================
+   HIGHLIGHT
+   ============================================================ */
+.highlight { background: #fef08a; border-radius: 3px; padding: 0 2px; }
+
+/* ============================================================
+   TOAST
+   ============================================================ */
 @keyframes slideUp {
   from { opacity: 0; transform: translateY(10px); }
   to   { opacity: 1; transform: translateY(0); }
 }
-#toast-inner { animation: slideUp 0.25s ease; }
+#toast-inner { animation: slideUp .22s ease; border-radius: 12px !important; box-shadow: var(--shadow-lg); }
 
-/* Step indicator */
+/* ============================================================
+   STEP INDICATOR
+   ============================================================ */
 .step-dot {
-  width: 28px; height: 28px; border-radius: 50%; border: 2px solid #d1d5db;
+  width: 28px; height: 28px; border-radius: 50%; border: 2px solid var(--border);
   display: flex; align-items: center; justify-content: center;
-  font-size: 12px; font-weight: 700; color: #9ca3af; background: white;
-  flex-shrink: 0; transition: all 0.2s;
+  font-size: 12px; font-weight: 700; color: var(--text-3); background: var(--card);
+  flex-shrink: 0; transition: all .2s;
 }
-.step-dot.active { border-color: #4f46e5; color: #4f46e5; }
-.step-dot.done { border-color: #4f46e5; background: #4f46e5; color: white; }
-.step-line {
-  flex: 1; height: 2px; background: #e5e7eb; margin: 0 4px; transition: background 0.3s;
-}
-.step-line.done { background: #4f46e5; }
+.step-dot.active { border-color: var(--primary); color: var(--primary); }
+.step-dot.done   { border-color: var(--primary); background: var(--primary); color: #fff; }
+.step-line { flex: 1; height: 2px; background: var(--border); margin: 0 4px; transition: background .3s; }
+.step-line.done { background: var(--primary); }
 
-/* Claim tab */
-.claim-tab { color: #6b7280; background: transparent; }
-.claim-tab.active { background: #4f46e5; color: white; }
+/* ============================================================
+   CLAIM ITEM ROW
+   ============================================================ */
+.claim-item-row { cursor: pointer; border: 2px solid transparent; border-radius: 12px; transition: all .15s; }
+.claim-item-row:hover    { border-color: #a5b4fc; background: var(--primary-l); }
+.claim-item-row.selected { border-color: var(--primary); background: var(--primary-l); }
 
-/* Claim item selectable row */
-.claim-item-row { cursor: pointer; border: 2px solid transparent; transition: all 0.15s; }
-.claim-item-row:hover { border-color: #a5b4fc; background: #eef2ff; }
-.claim-item-row.selected { border-color: #4f46e5; background: #eef2ff; }
-
-/* Admin tabs */
-.admin-tab { background: white; color: #6b7280; }
-.admin-tab:hover { background: #eef2ff; color: #4f46e5; border-color: #a5b4fc; }
-.admin-tab.active { background: #4f46e5; color: white; border-color: #4f46e5; }
-
-/* Claim filter buttons */
-.claim-filter-btn { background: white; color: #6b7280; }
-.claim-filter-btn:hover { background: #eef2ff; color: #4f46e5; border-color: #a5b4fc; }
-.claim-filter-btn.active { background: #4f46e5; color: white; border-color: #4f46e5; }
-
-/* Status badges for claims */
-.badge-matched  { background: #dcfce7; color: #15803d; }
-.badge-pending  { background: #fef9c3; color: #a16207; }
-.badge-approved { background: #dbeafe; color: #1d4ed8; }
-.badge-rejected { background: #fee2e2; color: #dc2626; }
-.badge-completed { background: #f0fdf4; color: #15803d; }
-
-/* Disposal badges */
-.badge-disposed  { background: #ffedd5; color: #c2410c; }
-.badge-destroyed { background: #fee2e2; color: #991b1b; }
-.badge-donated   { background: #dbeafe; color: #1e40af; }
-
-/* Ticket */
+/* ============================================================
+   TICKET
+   ============================================================ */
 .ticket-border { border: 2px dashed #c7d2fe; }
 
-/* Signature pad */
+/* ============================================================
+   SIGNATURE PAD
+   ============================================================ */
 #sig-canvas { background: #fafafa; }
-#sig-wrap.signed { border-color: #6366f1; }
-.sig-display {
-  border: 1px solid #e5e7eb; border-radius: 8px;
-  background: #f9fafb; padding: 4px; max-width: 100%;
-}
+#sig-wrap.signed { border-color: var(--primary); }
+.sig-display { border: 1px solid var(--border); border-radius: 8px; background: #f9fafb; padding: 4px; max-width: 100%; }
 .sig-display img { max-height: 72px; display: block; margin: 0 auto; }
 
-/* Scrollbar thin */
-::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-track { background: #f1f5f9; }
-::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+/* ============================================================
+   HERO SECTIONS
+   ============================================================ */
+.hero-lost  { background: linear-gradient(135deg,#ef4444,#dc2626) !important; box-shadow: 0 4px 20px rgba(220,38,38,.25); }
+.hero-found { background: linear-gradient(135deg,#22c55e,#16a34a) !important; box-shadow: 0 4px 20px rgba(22,163,74,.25); }
+
+/* ============================================================
+   SCROLLBAR
+   ============================================================ */
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 99px; }
+
+/* ============================================================
+   PAGE FADE
+   ============================================================ */
+@keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+.page:not(.hidden) { animation: fadeIn .2s ease; }
+
+/* ============================================================
+   MOBILE IMPROVEMENTS
+   ============================================================ */
+@media (max-width: 768px) {
+  /* Main padding lebih kecil */
+  main { padding: 16px !important; }
+
+  /* Hero stack vertikal di mobile */
+  .flex.gap-4.mb-6.flex-col { gap: 12px !important; }
+
+  /* Card full width */
+  .item-card { border-radius: 14px !important; }
+
+  /* Modal full screen di mobile */
+  #modal-overlay > div,
+  #report-modal-overlay > div,
+  #resolve-modal-overlay > div,
+  #disposal-modal-overlay > div {
+    max-height: 95vh;
+    margin: 0;
+    border-radius: 20px 20px 0 0 !important;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    max-width: 100%;
+  }
+  #modal-overlay,
+  #report-modal-overlay,
+  #resolve-modal-overlay,
+  #disposal-modal-overlay {
+    align-items: flex-end !important;
+    padding: 0 !important;
+  }
+
+  /* Admin tabs scroll horizontal */
+  .flex.gap-2.mb-4.flex-wrap {
+    flex-wrap: nowrap !important;
+    overflow-x: auto;
+    padding-bottom: 4px;
+  }
+  .flex.gap-2.mb-4.flex-wrap::-webkit-scrollbar { height: 0; }
+
+  /* Button touch targets lebih besar */
+  button { min-height: 40px; }
+
+  /* Text lebih kecil di mobile */
+  h1 { font-size: 1.5rem !important; }
+  h2 { font-size: 1.2rem !important; }
+
+  /* Pagination lebih kompak */
+  #lost-pagination button,
+  #found-pagination button { padding: 6px 10px !important; font-size: 12px !important; }
+
+  /* Mobile menu slide */
+  #mobile-menu { animation: slideDown .2s ease; }
+  @keyframes slideDown {
+    from { opacity:0; transform: translateY(-8px); }
+    to   { opacity:1; transform: translateY(0); }
+  }
+
+  /* Contact section stack */
+  .max-w-md.mx-auto.mt-12 { margin-top: 24px !important; }
+
+  /* Hamburger transitions */
+  #ham-1, #ham-2, #ham-3 { transition: all .25s ease; }
+}

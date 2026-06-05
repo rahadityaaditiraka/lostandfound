@@ -206,20 +206,23 @@ function requireLogin(callback) {
 }
 
 function updateAuthUI() {
-  const btnLogin = document.getElementById('btn-login');
-  const userInfo = document.getElementById('user-info');
-  const nameDisp = document.getElementById('user-email-display');
-  if (currentUser) {
-    const info = getRoleFromEmail(currentUser.email);
-    btnLogin.classList.add('hidden');
-    userInfo.classList.remove('hidden');
-    userInfo.classList.add('flex');
-    nameDisp.textContent = (info?.name || currentUser.email) + (currentUserRole === 'admin' ? ' 👑' : ' 🙋');
-  } else {
-    btnLogin.classList.remove('hidden');
-    userInfo.classList.add('hidden');
-    userInfo.classList.remove('flex');
-  }
+  const info = currentUser ? getRoleFromEmail(currentUser.email) : null;
+  const displayName = info ? info.name + (currentUserRole === 'admin' ? ' 👑' : ' 🙋') : '';
+  const loggedIn = !!currentUser;
+
+  // Desktop
+  document.getElementById('btn-login')?.classList.toggle('hidden', loggedIn);
+  const ui = document.getElementById('user-info');
+  if (ui) { ui.classList.toggle('hidden', !loggedIn); ui.classList.toggle('flex', loggedIn); }
+  const nd = document.getElementById('user-email-display');
+  if (nd) nd.textContent = displayName;
+
+  // Mobile
+  document.getElementById('btn-login-mobile')?.classList.toggle('hidden', loggedIn);
+  const uiM = document.getElementById('user-info-mobile');
+  if (uiM) { uiM.classList.toggle('hidden', !loggedIn); uiM.classList.toggle('flex', loggedIn); }
+  const ndM = document.getElementById('user-display-mobile');
+  if (ndM) ndM.textContent = info?.name || '';
 }
 
 function launchApp() {
@@ -2002,8 +2005,11 @@ let currentAdminTab    = 'lost';
 let currentClaimFilter = 'all';
 
 function setAdminNav(loggedIn) {
-  ['nav-all', 'nav-disposal', 'nav-admin'].forEach(id => {
-    document.getElementById(id).classList.toggle('hidden', !loggedIn);
+  ['nav-all','nav-disposal','nav-admin'].forEach(id => {
+    document.getElementById(id)?.classList.toggle('hidden', !loggedIn);
+  });
+  ['mnav-all','mnav-disposal','mnav-admin'].forEach(id => {
+    document.getElementById(id)?.classList.toggle('hidden', !loggedIn);
   });
   // Tab Riwayat di modul Pengambilan
   document.getElementById('tab-history').classList.toggle('hidden', !loggedIn);
@@ -3087,6 +3093,25 @@ function showToast(msg, colorClass) {
 // ============================================================
 // INIT
 // ============================================================
+// ============================================================
+// MOBILE MENU
+// ============================================================
+function toggleMobileMenu() {
+  const menu = document.getElementById('mobile-menu');
+  const isOpen = !menu.classList.contains('hidden');
+  menu.classList.toggle('hidden', isOpen);
+  // Animasi hamburger → X
+  document.getElementById('ham-1').style.transform = isOpen ? '' : 'rotate(45deg) translate(4px,4px)';
+  document.getElementById('ham-2').style.opacity   = isOpen ? '' : '0';
+  document.getElementById('ham-3').style.transform = isOpen ? '' : 'rotate(-45deg) translate(4px,-4px)';
+}
+function closeMobileMenu() {
+  document.getElementById('mobile-menu').classList.add('hidden');
+  document.getElementById('ham-1').style.transform = '';
+  document.getElementById('ham-2').style.opacity   = '';
+  document.getElementById('ham-3').style.transform = '';
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   initFirebase();
   // Load MobileNet di background

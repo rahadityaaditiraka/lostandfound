@@ -13,11 +13,12 @@
   <!-- NAVBAR -->
   <nav class="bg-indigo-700 text-white shadow-lg sticky top-0 z-40">
     <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-      <div class="flex items-center gap-2 cursor-pointer" onclick="showPage('lost')">
+      <div class="flex items-center gap-2 cursor-pointer" onclick="showPage('lost');closeMobileMenu()">
         <span class="text-2xl">🔍</span>
-        <span class="font-bold text-xl tracking-wide">Lost & Found</span>
+        <span class="font-bold text-lg tracking-wide">Lost & Found</span>
       </div>
-      <div class="flex gap-1 flex-wrap justify-end">
+      <!-- Desktop nav -->
+      <div class="hidden md:flex gap-1 flex-wrap justify-end items-center">
         <button onclick="showPage('lost')"  id="nav-lost"
           class="nav-btn px-3 py-2 rounded-lg text-sm font-medium transition">🚨 Barang Hilang</button>
         <button onclick="showPage('found')" id="nav-found"
@@ -45,6 +46,40 @@
           </div>
         </div>
       </div>
+
+      <!-- Mobile: hamburger -->
+      <div class="flex md:hidden items-center gap-2">
+        <button onclick="openAuthModal()" id="btn-login-mobile"
+          class="bg-white/20 text-white px-3 py-1.5 rounded-lg text-xs font-semibold">👤 Masuk</button>
+        <div id="user-info-mobile" class="hidden items-center gap-1">
+          <span id="user-display-mobile" class="text-xs text-indigo-200 max-w-[80px] truncate"></span>
+          <button onclick="logoutUser()" class="bg-white/20 text-white px-2 py-1 rounded-lg text-xs">Keluar</button>
+        </div>
+        <button onclick="toggleMobileMenu()" id="hamburger"
+          class="p-2 rounded-lg hover:bg-white/10 transition">
+          <div class="w-5 h-0.5 bg-white mb-1 transition-all" id="ham-1"></div>
+          <div class="w-5 h-0.5 bg-white mb-1 transition-all" id="ham-2"></div>
+          <div class="w-5 h-0.5 bg-white transition-all"      id="ham-3"></div>
+        </button>
+      </div>
+    </div>
+
+    <!-- Mobile menu dropdown -->
+    <div id="mobile-menu" class="hidden md:hidden border-t border-white/10">
+      <div class="px-4 py-3 flex flex-col gap-1">
+        <button onclick="showPage('lost');closeMobileMenu()"  id="mnav-lost"
+          class="nav-btn px-3 py-2.5 rounded-lg text-sm font-medium text-left transition">🚨 Barang Hilang</button>
+        <button onclick="showPage('found');closeMobileMenu()" id="mnav-found"
+          class="nav-btn px-3 py-2.5 rounded-lg text-sm font-medium text-left transition">✅ Barang Ditemukan</button>
+        <button onclick="showPage('all');closeMobileMenu()"   id="mnav-all"
+          class="nav-btn px-3 py-2.5 rounded-lg text-sm font-medium text-left transition hidden">📋 Semua Laporan</button>
+        <button onclick="showPage('claim');closeMobileMenu()" id="mnav-claim"
+          class="nav-btn px-3 py-2.5 rounded-lg text-sm font-medium text-left transition">🤝 Pengambilan</button>
+        <button onclick="showPage('disposal');closeMobileMenu()" id="mnav-disposal"
+          class="nav-btn px-3 py-2.5 rounded-lg text-sm font-medium text-left transition hidden">🗑️ Pemusnahan</button>
+        <button onclick="showPage('admin');closeMobileMenu()"    id="mnav-admin"
+          class="nav-btn px-3 py-2.5 rounded-lg text-sm font-medium text-left transition hidden">⚙️ Admin</button>
+      </div>
     </div>
   </nav>
 
@@ -57,7 +92,7 @@
       <div class="flex gap-4 mb-6 flex-col md:flex-row">
 
         <!-- Merah: Barang Hilang -->
-        <div class="bg-gradient-to-r from-red-500 to-red-600 rounded-2xl text-white p-6 flex items-center justify-between flex-1">
+        <div class="hero-lost rounded-2xl text-white p-6 flex items-center justify-between flex-1" style="box-shadow:0 8px 24px rgba(220,38,38,0.3)">
           <div>
             <h1 class="text-2xl font-bold mb-1">🚨 Barang Hilang</h1>
             <p class="text-red-100 text-sm">Daftar barang yang dilaporkan hilang. Bantu temukan pemiliknya!</p>
@@ -134,7 +169,7 @@
     <div id="page-found" class="page hidden">
 
       <!-- Hero -->
-      <div class="bg-gradient-to-r from-green-500 to-emerald-600 rounded-2xl text-white p-6 mb-6 flex items-center justify-between">
+      <div class="hero-found rounded-2xl text-white p-6 mb-6 flex items-center justify-between" style="box-shadow:0 8px 24px rgba(22,163,74,0.3)">
         <div>
           <h1 class="text-2xl font-bold mb-1">✅ Barang Ditemukan</h1>
           <p class="text-green-100 text-sm">Daftar barang yang ditemukan dan menunggu pemiliknya.</p>
@@ -1289,8 +1324,7 @@
   </div>
 
   <!-- MODAL: LOGIN -->
-  <div id="auth-modal-overlay" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4"
-       onclick="closeAuthModal(event)">
+  <div id="auth-modal-overlay" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl shadow-xl w-full max-w-sm relative" onclick="event.stopPropagation()">
       <button onclick="closeAuthModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-700 text-xl">✕</button>
       <div class="p-6 text-center pb-2">
