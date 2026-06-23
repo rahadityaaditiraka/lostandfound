@@ -137,18 +137,19 @@ function openAuthModal() {
   document.getElementById('auth-modal-overlay').classList.remove('hidden');
   setTimeout(() => {
     document.getElementById('login-username').focus();
-    // Render reCAPTCHA login
     if (typeof grecaptcha !== 'undefined') {
-      const container = document.getElementById('recaptcha-login');
-      if (container && !container.hasChildNodes()) {
-        window._recaptchaLoginId = grecaptcha.render('recaptcha-login', {
-          sitekey: '6LeqXwwtAAAAAGlIOjJJ7iiU7DCNhTcPbM6XbqKL'
-        });
-      } else if (container) {
-        try { grecaptcha.reset(window._recaptchaLoginId); } catch(e){}
+      const el = document.getElementById('recaptcha-login');
+      if (el) {
+        if (el.childElementCount === 0) {
+          window._recaptchaLoginId = grecaptcha.render(el, {
+            sitekey: '6LeqXwwtAAAAAGlIOjJJ7iiU7DCNhTcPbM6XbqKL'
+          });
+        } else {
+          try { grecaptcha.reset(window._recaptchaLoginId); } catch(e){}
+        }
       }
     }
-  }, 300);
+  }, 400);
 }
 
 function closeAuthModal(e) {
@@ -174,27 +175,28 @@ async function loginUser() {
     errEl.classList.remove('hidden'); return;
   }
 
+
   // Validasi reCAPTCHA
-  const recapToken = typeof grecaptcha !== 'undefined'
-    ? grecaptcha.getResponse(window._recaptchaLoginId)
-    : 'skip';
-  if (!recapToken) {
-    errEl.textContent = 'Harap selesaikan verifikasi reCAPTCHA.';
-    errEl.classList.remove('hidden'); return;
+  if (typeof grecaptcha !== 'undefined' && window._recaptchaLoginId !== undefined) {
+    const token = grecaptcha.getResponse(window._recaptchaLoginId);
+    if (!token) {
+      errEl.textContent = 'Harap selesaikan verifikasi reCAPTCHA.';
+      errEl.classList.remove('hidden');
+      return;
+    }
   }
 
   const email = username + EMAIL_DOMAIN;
   try {
     await firebase.auth().signInWithEmailAndPassword(email, password);
     document.getElementById('auth-modal-overlay').classList.add('hidden');
-    // Reset reCAPTCHA setelah login
-    if (typeof grecaptcha !== 'undefined') {
+    if (typeof grecaptcha !== 'undefined' && window._recaptchaLoginId !== undefined) {
       try { grecaptcha.reset(window._recaptchaLoginId); } catch(e){}
     }
   } catch(err) {
     errEl.textContent = 'Username atau password salah.';
     errEl.classList.remove('hidden');
-    if (typeof grecaptcha !== 'undefined') {
+    if (typeof grecaptcha !== 'undefined' && window._recaptchaLoginId !== undefined) {
       try { grecaptcha.reset(window._recaptchaLoginId); } catch(e){}
     }
   }
