@@ -1,0 +1,184 @@
+<svg viewBox="0 0 900 1800" xmlns="http://www.w3.org/2000/svg" font-family="system-ui,-apple-system,sans-serif">
+  <defs>
+    <marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#64748b"/></marker>
+    <marker id="arr-red" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#dc2626"/></marker>
+    <marker id="arr-green" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#16a34a"/></marker>
+  </defs>
+
+  <rect width="900" height="1800" fill="#f8fafc" rx="16"/>
+
+  <!-- TITLE -->
+  <rect x="20" y="16" width="860" height="56" rx="12" fill="#4f46e5"/>
+  <text x="450" y="48" text-anchor="middle" fill="white" font-size="20" font-weight="700">SOP Alur Lost &amp; Found — Ice Skating</text>
+  <text x="450" y="64" text-anchor="middle" fill="#c7d2fe" font-size="12">Dari barang ditemukan hingga diselesaikan</text>
+
+  <!-- LEGEND -->
+  <rect x="20" y="84" width="860" height="36" rx="8" fill="white" stroke="#e2e8f0"/>
+  <rect x="36" y="96" width="12" height="12" rx="3" fill="#4f46e5"/>
+  <text x="54" y="106" font-size="11" fill="#475569">Tindakan Petugas</text>
+  <rect x="170" y="96" width="12" height="12" rx="3" fill="#16a34a"/>
+  <text x="188" y="106" font-size="11" fill="#475569">Tindakan Pemilik</text>
+  <rect x="304" y="96" width="12" height="12" rx="3" fill="#d97706"/>
+  <text x="322" y="106" font-size="11" fill="#475569">Keputusan/Cek</text>
+  <rect x="438" y="96" width="12" height="12" rx="3" fill="#dc2626"/>
+  <text x="456" y="106" font-size="11" fill="#475569">Pemusnahan</text>
+  <rect x="542" y="96" width="12" height="12" rx="3" fill="#0891b2"/>
+  <text x="560" y="106" font-size="11" fill="#475569">Sistem / Auto</text>
+
+  <!-- FASE 1 -->
+  <rect x="20" y="132" width="860" height="24" rx="6" fill="#e0e7ff"/>
+  <text x="450" y="148" text-anchor="middle" font-size="12" font-weight="700" fill="#3730a3">FASE 1 — PENEMUAN &amp; PELAPORAN BARANG</text>
+
+  <rect x="310" y="168" width="280" height="52" rx="10" fill="#4f46e5" stroke="#3730a3" stroke-width="1.5"/>
+  <text x="450" y="189" text-anchor="middle" fill="white" font-size="13" font-weight="700">1. Barang Ditemukan</text>
+  <text x="450" y="207" text-anchor="middle" fill="#c7d2fe" font-size="11">Petugas/tamu menemukan barang</text>
+
+  <line x1="450" y1="220" x2="450" y2="244" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <rect x="310" y="248" width="280" height="52" rx="10" fill="#4f46e5" stroke="#3730a3" stroke-width="1.5"/>
+  <text x="450" y="269" text-anchor="middle" fill="white" font-size="13" font-weight="700">2. Serahkan ke Petugas</text>
+  <text x="450" y="287" text-anchor="middle" fill="#c7d2fe" font-size="11">Barang diserahkan ke staff/security</text>
+
+  <line x1="450" y1="300" x2="450" y2="324" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <rect x="310" y="328" width="280" height="64" rx="10" fill="#4f46e5" stroke="#3730a3" stroke-width="1.5"/>
+  <text x="450" y="349" text-anchor="middle" fill="white" font-size="13" font-weight="700">3. Input Laporan Barang Ditemukan</text>
+  <text x="450" y="367" text-anchor="middle" fill="#c7d2fe" font-size="11">Login → Barang Ditemukan → + Laporkan</text>
+  <text x="450" y="383" text-anchor="middle" fill="#c7d2fe" font-size="11">Isi: nama, kategori, lokasi, foto, kontak</text>
+
+  <line x1="450" y1="392" x2="450" y2="416" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <rect x="310" y="420" width="280" height="52" rx="10" fill="#0891b2" stroke="#0e7490" stroke-width="1.5"/>
+  <text x="450" y="441" text-anchor="middle" fill="white" font-size="13" font-weight="700">4. Sistem Cek Auto-Match</text>
+  <text x="450" y="459" text-anchor="middle" fill="#cffafe" font-size="11">Bandingkan dengan laporan barang hilang</text>
+
+  <line x1="450" y1="472" x2="450" y2="496" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <polygon points="450,500 580,530 450,560 320,530" fill="#d97706" stroke="#b45309" stroke-width="1.5"/>
+  <text x="450" y="527" text-anchor="middle" fill="white" font-size="12" font-weight="700">Ada kandidat</text>
+  <text x="450" y="543" text-anchor="middle" fill="white" font-size="12" font-weight="700">cocok?</text>
+
+  <line x1="580" y1="530" x2="660" y2="530" stroke="#16a34a" stroke-width="1.5" marker-end="url(#arr-green)"/>
+  <text x="618" y="522" text-anchor="middle" font-size="11" fill="#16a34a" font-weight="600">YA</text>
+  <rect x="660" y="504" width="200" height="52" rx="10" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/>
+  <text x="760" y="525" text-anchor="middle" fill="#15803d" font-size="12" font-weight="700">Tampil Kandidat Cocok</text>
+  <text x="760" y="543" text-anchor="middle" fill="#15803d" font-size="11">Admin konfirmasi cocok</text>
+
+  <line x1="450" y1="560" x2="450" y2="584" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr)"/>
+  <text x="430" y="575" text-anchor="end" font-size="11" fill="#64748b" font-weight="600">TIDAK</text>
+
+  <!-- FASE 2 -->
+  <rect x="20" y="588" width="860" height="24" rx="6" fill="#dcfce7"/>
+  <text x="450" y="604" text-anchor="middle" font-size="12" font-weight="700" fill="#14532d">FASE 2 — PENCARIAN PEMILIK</text>
+
+  <rect x="310" y="624" width="280" height="52" rx="10" fill="#16a34a" stroke="#14532d" stroke-width="1.5"/>
+  <text x="450" y="645" text-anchor="middle" fill="white" font-size="13" font-weight="700">5. Barang Disimpan Petugas</text>
+  <text x="450" y="663" text-anchor="middle" fill="#bbf7d0" font-size="11">Tunggu pemilik menghubungi</text>
+
+  <rect x="40" y="700" width="240" height="64" rx="10" fill="#16a34a" stroke="#14532d" stroke-width="1.5"/>
+  <text x="160" y="721" text-anchor="middle" fill="white" font-size="12" font-weight="700">6a. Pemilik Lapor Hilang</text>
+  <text x="160" y="739" text-anchor="middle" fill="#bbf7d0" font-size="11">Barang Hilang → + Laporkan</text>
+  <text x="160" y="755" text-anchor="middle" fill="#bbf7d0" font-size="11">Isi nama, deskripsi, lokasi, foto</text>
+
+  <rect x="620" y="700" width="240" height="64" rx="10" fill="#16a34a" stroke="#14532d" stroke-width="1.5"/>
+  <text x="740" y="721" text-anchor="middle" fill="white" font-size="12" font-weight="700">6b. Cari di Aplikasi</text>
+  <text x="740" y="739" text-anchor="middle" fill="#bbf7d0" font-size="11">Buka Barang Ditemukan</text>
+  <text x="740" y="755" text-anchor="middle" fill="#bbf7d0" font-size="11">Ketik nama/deskripsi di pencarian</text>
+
+  <line x1="380" y1="650" x2="200" y2="700" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr)"/>
+  <line x1="520" y1="650" x2="700" y2="700" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr)"/>
+  <line x1="160" y1="764" x2="160" y2="796" stroke="#64748b" stroke-width="1.5"/>
+  <line x1="740" y1="764" x2="740" y2="796" stroke="#64748b" stroke-width="1.5"/>
+  <line x1="160" y1="796" x2="450" y2="796" stroke="#64748b" stroke-width="1.5"/>
+  <line x1="740" y1="796" x2="450" y2="796" stroke="#64748b" stroke-width="1.5"/>
+  <line x1="450" y1="796" x2="450" y2="816" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- FASE 3 -->
+  <rect x="20" y="820" width="860" height="24" rx="6" fill="#dbeafe"/>
+  <text x="450" y="836" text-anchor="middle" font-size="12" font-weight="700" fill="#1e3a8a">FASE 3 — PROSES KLAIM PENGAMBILAN</text>
+
+  <rect x="310" y="856" width="280" height="64" rx="10" fill="#2563eb" stroke="#1e40af" stroke-width="1.5"/>
+  <text x="450" y="877" text-anchor="middle" fill="white" font-size="13" font-weight="700">7. Ajukan Klaim (Step 1)</text>
+  <text x="450" y="895" text-anchor="middle" fill="#bfdbfe" font-size="11">Pengambilan → Ajukan Klaim</text>
+  <text x="450" y="911" text-anchor="middle" fill="#bfdbfe" font-size="11">Pilih barang yang ingin diklaim</text>
+
+  <line x1="450" y1="920" x2="450" y2="944" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <rect x="310" y="948" width="280" height="76" rx="10" fill="#2563eb" stroke="#1e40af" stroke-width="1.5"/>
+  <text x="450" y="969" text-anchor="middle" fill="white" font-size="13" font-weight="700">8. Bukti Kepemilikan (Step 2)</text>
+  <text x="450" y="987" text-anchor="middle" fill="#bfdbfe" font-size="11">Nama, kontak, nama petugas</text>
+  <text x="450" y="1003" text-anchor="middle" fill="#bfdbfe" font-size="11">Deskripsi bukti kepemilikan</text>
+  <text x="450" y="1019" text-anchor="middle" fill="#bfdbfe" font-size="11">Tanda tangan digital</text>
+
+  <line x1="450" y1="1024" x2="450" y2="1048" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <rect x="310" y="1052" width="280" height="64" rx="10" fill="#2563eb" stroke="#1e40af" stroke-width="1.5"/>
+  <text x="450" y="1073" text-anchor="middle" fill="white" font-size="13" font-weight="700">9. Pilih Jadwal (Step 3)</text>
+  <text x="450" y="1091" text-anchor="middle" fill="#bfdbfe" font-size="11">Pilih tanggal &amp; waktu pengambilan</text>
+  <text x="450" y="1107" text-anchor="middle" fill="#bfdbfe" font-size="11">Kirim klaim → Status: Pending</text>
+
+  <line x1="450" y1="1116" x2="450" y2="1140" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- FASE 4 -->
+  <rect x="20" y="1144" width="860" height="24" rx="6" fill="#fef9c3"/>
+  <text x="450" y="1160" text-anchor="middle" font-size="12" font-weight="700" fill="#713f12">FASE 4 — VERIFIKASI ADMIN</text>
+
+  <rect x="310" y="1180" width="280" height="52" rx="10" fill="#4f46e5" stroke="#3730a3" stroke-width="1.5"/>
+  <text x="450" y="1201" text-anchor="middle" fill="white" font-size="13" font-weight="700">10. Admin Review Klaim</text>
+  <text x="450" y="1219" text-anchor="middle" fill="#c7d2fe" font-size="11">Admin → Klaim &amp; Pengambilan</text>
+
+  <line x1="450" y1="1232" x2="450" y2="1256" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <polygon points="450,1260 580,1290 450,1320 320,1290" fill="#d97706" stroke="#b45309" stroke-width="1.5"/>
+  <text x="450" y="1287" text-anchor="middle" fill="white" font-size="12" font-weight="700">Klaim</text>
+  <text x="450" y="1303" text-anchor="middle" fill="white" font-size="12" font-weight="700">disetujui?</text>
+
+  <line x1="320" y1="1290" x2="220" y2="1290" stroke="#dc2626" stroke-width="1.5" marker-end="url(#arr-red)"/>
+  <text x="268" y="1282" text-anchor="middle" font-size="11" fill="#dc2626" font-weight="600">TOLAK</text>
+  <rect x="40" y="1264" width="180" height="52" rx="10" fill="#fee2e2" stroke="#dc2626" stroke-width="1.5"/>
+  <text x="130" y="1285" text-anchor="middle" fill="#dc2626" font-size="12" font-weight="700">Klaim Ditolak</text>
+  <text x="130" y="1303" text-anchor="middle" fill="#dc2626" font-size="11">Notif alasan penolakan</text>
+
+  <line x1="450" y1="1320" x2="450" y2="1344" stroke="#16a34a" stroke-width="1.5" marker-end="url(#arr-green)"/>
+  <text x="430" y="1335" text-anchor="end" font-size="11" fill="#16a34a" font-weight="600">SETUJU</text>
+
+  <rect x="310" y="1348" width="280" height="64" rx="10" fill="#4f46e5" stroke="#3730a3" stroke-width="1.5"/>
+  <text x="450" y="1369" text-anchor="middle" fill="white" font-size="13" font-weight="700">11. Admin Jadwalkan Pengambilan</text>
+  <text x="450" y="1387" text-anchor="middle" fill="#c7d2fe" font-size="11">Isi tanggal, waktu, lokasi, petugas</text>
+  <text x="450" y="1403" text-anchor="middle" fill="#c7d2fe" font-size="11">Kode verifikasi otomatis dibuat</text>
+
+  <line x1="450" y1="1412" x2="450" y2="1436" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- FASE 5 -->
+  <rect x="20" y="1440" width="860" height="24" rx="6" fill="#dcfce7"/>
+  <text x="450" y="1456" text-anchor="middle" font-size="12" font-weight="700" fill="#14532d">FASE 5 — SERAH TERIMA &amp; PENYELESAIAN</text>
+
+  <rect x="310" y="1476" width="280" height="52" rx="10" fill="#16a34a" stroke="#14532d" stroke-width="1.5"/>
+  <text x="450" y="1497" text-anchor="middle" fill="white" font-size="13" font-weight="700">12. Pemilik Datang Ambil Barang</text>
+  <text x="450" y="1515" text-anchor="middle" fill="#bbf7d0" font-size="11">Tunjukkan kode verifikasi ke petugas</text>
+
+  <line x1="450" y1="1528" x2="450" y2="1552" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <rect x="310" y="1556" width="280" height="64" rx="10" fill="#4f46e5" stroke="#3730a3" stroke-width="1.5"/>
+  <text x="450" y="1577" text-anchor="middle" fill="white" font-size="13" font-weight="700">13. Admin Konfirmasi + Upload Bukti</text>
+  <text x="450" y="1595" text-anchor="middle" fill="#c7d2fe" font-size="11">Upload foto serah terima</text>
+  <text x="450" y="1611" text-anchor="middle" fill="#c7d2fe" font-size="11">Status → Selesai</text>
+
+  <line x1="450" y1="1620" x2="450" y2="1644" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <rect x="310" y="1648" width="280" height="52" rx="10" fill="#15803d" stroke="#14532d" stroke-width="2"/>
+  <text x="450" y="1669" text-anchor="middle" fill="white" font-size="14" font-weight="700">✅ Laporan Selesai</text>
+  <text x="450" y="1687" text-anchor="middle" fill="#bbf7d0" font-size="11">Data tersimpan di Firebase &amp; riwayat</text>
+
+  <!-- FASE ALT -->
+  <rect x="20" y="1720" width="860" height="24" rx="6" fill="#fee2e2"/>
+  <text x="450" y="1736" text-anchor="middle" font-size="12" font-weight="700" fill="#7f1d1d">FASE ALTERNATIF — TIDAK ADA PEMILIK → PEMUSNAHAN / DONASI</text>
+
+  <rect x="160" y="1756" width="240" height="28" rx="8" fill="#fee2e2" stroke="#dc2626"/>
+  <text x="280" y="1775" text-anchor="middle" fill="#dc2626" font-size="11" font-weight="600">Barang lebih dari 30 hari tidak diklaim</text>
+
+  <line x1="400" y1="1770" x2="440" y2="1770" stroke="#dc2626" stroke-width="1.5" marker-end="url(#arr-red)"/>
+
+  <rect x="440" y="1756" width="300" height="28" rx="8" fill="#fee2e2" stroke="#dc2626"/>
+  <text x="590" y="1775" text-anchor="middle" fill="#dc2626" font-size="11" font-weight="600">Admin proses Pemusnahan / Donasi</text>
+</svg>

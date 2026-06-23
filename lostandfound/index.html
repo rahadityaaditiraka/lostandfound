@@ -168,17 +168,44 @@
     <!-- ===== PAGE: BARANG DITEMUKAN ===== -->
     <div id="page-found" class="page hidden">
 
-      <!-- Hero -->
-      <div class="hero-found rounded-2xl text-white p-6 mb-6 flex items-center justify-between" style="box-shadow:0 8px 24px rgba(22,163,74,0.3)">
-        <div>
-          <h1 class="text-2xl font-bold mb-1">✅ Barang Ditemukan</h1>
-          <p class="text-green-100 text-sm">Daftar barang yang ditemukan dan menunggu pemiliknya.</p>
-          <div id="found-stat" class="text-green-100 text-xs mt-2"></div>
+      <!-- Hero + Hubungi Kami berdampingan -->
+      <div class="flex gap-4 mb-6 flex-col md:flex-row">
+
+        <!-- Hijau: Barang Ditemukan -->
+        <div class="hero-found rounded-2xl text-white p-6 flex items-center justify-between flex-1" style="box-shadow:0 8px 24px rgba(22,163,74,0.3)">
+          <div>
+            <h1 class="text-2xl font-bold mb-1">✅ Barang Ditemukan</h1>
+            <p class="text-green-100 text-sm">Daftar barang yang ditemukan dan menunggu pemiliknya.</p>
+            <div id="found-stat" class="text-green-100 text-xs mt-2"></div>
+          </div>
+          <button onclick="requireLogin(()=>openReportModal('found'))"
+            class="btn-report-found bg-white text-green-600 hover:bg-green-50 font-bold px-4 py-2.5 rounded-xl text-sm transition flex-shrink-0 ml-4 hidden">
+            + Laporkan Temuan
+          </button>
         </div>
-        <button onclick="requireLogin(()=>openReportModal('found'))"
-          class="btn-report-found bg-white text-green-600 hover:bg-green-50 font-bold px-4 py-2.5 rounded-xl text-sm transition flex-shrink-0 ml-4 hidden">
-          + Laporkan Temuan
-        </button>
+
+        <!-- Putih: Hubungi Kami -->
+        <div class="bg-white border border-gray-200 rounded-2xl shadow-sm p-5 flex flex-col justify-between md:w-72">
+          <div class="flex items-center gap-3 mb-3">
+            <div class="w-10 h-10 bg-green-50 rounded-full flex items-center justify-center text-xl flex-shrink-0">📞</div>
+            <div>
+              <p class="font-semibold text-gray-800 text-sm">Menemukan barang?</p>
+              <p class="text-gray-400 text-xs">Senin – Minggu · 10.00 – 17.00 WIB</p>
+            </div>
+          </div>
+          <p class="text-gray-500 text-xs mb-3">Segera laporkan kepada petugas kami agar barang dapat dikembalikan ke pemiliknya.</p>
+          <div class="flex flex-col gap-2">
+            <a href="tel:+6281234567890"
+              class="inline-flex items-center justify-center gap-1.5 border border-gray-200 hover:bg-gray-50 text-gray-700 text-xs font-semibold px-3 py-2 rounded-xl transition">
+              📱 +62 812-3456-7890
+            </a>
+            <a href="https://wa.me/6281234567890" target="_blank"
+              class="inline-flex items-center justify-center gap-1.5 bg-green-500 hover:bg-green-600 text-white text-xs font-semibold px-3 py-2 rounded-xl transition">
+              💬 WhatsApp
+            </a>
+          </div>
+        </div>
+
       </div>
 
       <!-- Filter & Search -->
@@ -283,6 +310,92 @@
           class="claim-tab flex-1 py-2 rounded-xl text-sm font-semibold transition hidden">Ajukan Klaim</button>
         <button onclick="claimTab('history')" id="tab-history"
           class="claim-tab flex-1 py-2 rounded-xl text-sm font-semibold transition hidden">📜 Riwayat</button>
+      </div>
+
+      <!-- PROSEDUR KLAIM — hanya untuk guest -->
+      <div id="guest-claim-guide" class="max-w-2xl mx-auto mb-6 hidden">
+        <div class="bg-white rounded-2xl shadow-sm border border-indigo-100 overflow-hidden">
+          <!-- Header -->
+          <div class="bg-indigo-600 px-5 py-4">
+            <h2 class="text-white font-bold text-base">📋 Cara Klaim Barang Temuan</h2>
+            <p class="text-indigo-200 text-xs mt-0.5">Ikuti langkah berikut jika Anda kehilangan barang di area kami</p>
+          </div>
+
+          <!-- Steps -->
+          <div class="p-5 space-y-4">
+
+            <!-- Step 1 -->
+            <div class="flex gap-3">
+              <div class="w-8 h-8 bg-indigo-600 text-white rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0">1</div>
+              <div>
+                <p class="font-semibold text-gray-800 text-sm">Cek daftar barang ditemukan</p>
+                <p class="text-gray-500 text-xs mt-0.5">Buka menu <b>✅ Barang Ditemukan</b> dan cari barang Anda menggunakan kolom pencarian. Jika barang Anda ada, lanjut ke langkah berikutnya.</p>
+              </div>
+            </div>
+
+            <div class="ml-4 border-l-2 border-indigo-100 pl-4 -mt-1 pb-1"></div>
+
+            <!-- Step 2 -->
+            <div class="flex gap-3">
+              <div class="w-8 h-8 bg-indigo-600 text-white rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0">2</div>
+              <div>
+                <p class="font-semibold text-gray-800 text-sm">Hubungi petugas kami</p>
+                <p class="text-gray-500 text-xs mt-0.5">Segera hubungi petugas melalui <b>WhatsApp</b> atau <b>telepon</b> di bawah ini, atau datang langsung ke area kami. Sampaikan bahwa Anda kehilangan barang.</p>
+              </div>
+            </div>
+
+            <div class="ml-4 border-l-2 border-indigo-100 pl-4 -mt-1 pb-1"></div>
+
+            <!-- Step 3 -->
+            <div class="flex gap-3">
+              <div class="w-8 h-8 bg-indigo-600 text-white rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0">3</div>
+              <div>
+                <p class="font-semibold text-gray-800 text-sm">Buktikan kepemilikan barang</p>
+                <p class="text-gray-500 text-xs mt-0.5">Deskripsikan barang Anda secara detail kepada petugas — warna, merek, isi, ciri khas, atau foto barang. Semakin detail semakin mudah diverifikasi.</p>
+              </div>
+            </div>
+
+            <div class="ml-4 border-l-2 border-indigo-100 pl-4 -mt-1 pb-1"></div>
+
+            <!-- Step 4 -->
+            <div class="flex gap-3">
+              <div class="w-8 h-8 bg-indigo-600 text-white rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0">4</div>
+              <div>
+                <p class="font-semibold text-gray-800 text-sm">Petugas menjadwalkan pengambilan</p>
+                <p class="text-gray-500 text-xs mt-0.5">Setelah bukti kepemilikan diverifikasi, tentukan <b>jadwal pengambilan barang di BXRink</b> yang sesuai dengan waktu Anda.</p>
+              </div>
+            </div>
+
+            <div class="ml-4 border-l-2 border-indigo-100 pl-4 -mt-1 pb-1"></div>
+
+            <!-- Step 5 -->
+            <div class="flex gap-3">
+              <div class="w-8 h-8 bg-green-600 text-white rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0">5</div>
+              <div>
+                <p class="font-semibold text-gray-800 text-sm">Ambil barang di lokasi</p>
+                <p class="text-gray-500 text-xs mt-0.5">Datang sesuai jadwal yang dikonfirmasi, tunjukkan kode verifikasi kepada petugas. Barang akan diserahkan kepada Anda. ✅</p>
+              </div>
+            </div>
+
+            <!-- CTA -->
+            <div class="mt-4 p-4 bg-indigo-50 rounded-xl flex items-center justify-between gap-3 flex-wrap">
+              <div>
+                <p class="text-sm font-semibold text-indigo-800">Butuh bantuan?</p>
+                <p class="text-xs text-indigo-500">Hubungi petugas kami langsung</p>
+              </div>
+              <div class="flex gap-2">
+                <a href="tel:+6281234567890"
+                  class="inline-flex items-center gap-1 bg-white border border-indigo-200 text-indigo-700 text-xs font-semibold px-3 py-2 rounded-xl hover:bg-indigo-100 transition">
+                  📱 Telepon
+                </a>
+                <a href="https://wa.me/6281234567890" target="_blank"
+                  class="inline-flex items-center gap-1 bg-green-500 hover:bg-green-600 text-white text-xs font-semibold px-3 py-2 rounded-xl transition">
+                  💬 WhatsApp
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- TAB: Track -->
@@ -606,7 +719,7 @@
         <div id="admin-panel-section" class="hidden">
           <div class="flex items-center justify-between mb-6">
             <h1 class="text-2xl font-bold text-gray-800">⚙️ Panel Admin</h1>
-            <button onclick="adminLogout()"
+            <button onclick="logoutUser()"
               class="flex items-center gap-2 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 text-sm font-semibold px-4 py-2 rounded-xl transition">
               <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h6a2 2 0 012 2v1" />

@@ -10,13 +10,12 @@ const FIREBASE_CONFIG = {
   appId:             "1:138580852129:web:b1eee4e4e875c395a31fe0"
 };
 
-const ADMIN_PW = '4m@dorblackLetterf0nt';
-
 // Hirarki: guest < user < admin
-let _db      = null;
-let _items   = [];
-let _claims  = [];
-let _appReady = false;
+let _db           = null;
+let _items        = [];
+let _claims       = [];
+let _appReady     = false;
+let adminLoggedIn = false;
 
 function getItems()  { return [..._items];  }
 function getClaims() { return [..._claims]; }
@@ -102,7 +101,7 @@ function refreshCurrentPage() {
   if (p === 'all')      renderAll();
   if (p === 'admin')    renderAdmin();
   if (p === 'disposal') renderDisposalPage();
-  if (p === 'claim')    renderPickupHistory();
+  if (p === 'claim')    initClaimPage();
 }
 
 // ============================================================
@@ -193,6 +192,9 @@ function applyRoleUI() {
   // Tab Ajukan Klaim: hanya user & admin
   document.getElementById('tab-new')?.classList.toggle('hidden', !isUser);
 
+  // Prosedur klaim: hanya untuk guest
+  document.getElementById('guest-claim-guide')?.classList.toggle('hidden', isUser);
+
   updateAuthUI();
 }
 
@@ -279,6 +281,8 @@ function initFirebase() {
   // Timeout fallback: jika Firebase lambat, app sudah jalan dari cache
   let itemsOk = false, claimsOk = false;
 
+  if (!_db) { console.error('Firestore tidak tersedia'); return; }
+
   _db.collection('items').onSnapshot(snap => {
     _items = snap.docs.map(d => d.data());
     // Simpan cache tanpa foto (foto terlalu besar untuk localStorage)
@@ -310,14 +314,14 @@ function genTicketCode() { return 'LF-' + Math.random().toString(36).slice(2,6).
 function seedDemo() {
   if (getItems().length > 0) return;
   const demos = [
-    { id: uid(), type: 'lost',  name: 'Dompet Kulit Coklat',         category: 'dompet/tas',  desc: 'Dompet kulit warna coklat tua, isi KTP, SIM A, kartu ATM BCA, dan uang tunai sekitar 200 ribu. Ada foto keluarga di dalamnya.',                    location: 'Kantin Gedung B Lantai 1',          date: '2026-05-28', reporter: 'Budi Santoso',   contact: '08123456789', photo: null, status: 'open', createdAt: Date.now() - 86400000*2 },
-    { id: uid(), type: 'found', name: 'Kunci Motor Honda Beat',      category: 'kunci',       desc: 'Satu kunci motor Honda Beat dengan gantungan kunci boneka beruang kecil warna biru. Ditemukan di area parkir basement.',                              location: 'Parkir Basement Gedung C',          date: '2026-05-29', reporter: 'Siti Rahayu',    contact: '08987654321', photo: null, status: 'open', createdAt: Date.now() - 86400000   },
-    { id: uid(), type: 'lost',  name: 'Handphone Samsung Galaxy A54',category: 'elektronik',  desc: 'HP Samsung Galaxy A54 warna hitam dengan case transparan. Layar sedikit retak di sudut kiri atas. Ada stiker kucing di belakang.',                   location: 'Ruang Rapat Lantai 3 Gedung A',     date: '2026-05-27', reporter: 'Ahmad Fauzi',    contact: 'ahmad@email.com', photo: null, status: 'open', createdAt: Date.now() - 86400000*3 },
-    { id: uid(), type: 'found', name: 'Handphone Samsung Warna Hitam',category: 'elektronik', desc: 'HP Samsung warna hitam case bening ditemukan di meja kantin. Ada stiker kucing di cover belakang. Layar ada retakan kecil di pojok.',                location: 'Kantin Gedung A Lantai 1',           date: '2026-05-27', reporter: 'Rini Agustina',  contact: '08556677889', photo: null, status: 'open', createdAt: Date.now() - 86400000*3 + 3600000 },
-    { id: uid(), type: 'lost',  name: 'Tas Ransel Hitam Eiger',      category: 'dompet/tas',  desc: 'Tas ransel warna hitam merek Eiger berisi laptop, charger, dan catatan kuliah. Tertinggal di area lift.',                                            location: 'Area Lift Gedung B',                date: '2026-05-30', reporter: 'Farhan Hidayat', contact: '08998877665', photo: null, status: 'open', createdAt: Date.now() - 7200000 },
-    { id: uid(), type: 'found', name: 'Tas Ransel Hitam',            category: 'dompet/tas',  desc: 'Tas ransel warna hitam merek Eiger. Di dalamnya ada laptop, charger, dan beberapa buku. Ditemukan di dekat lift lantai 2.',                          location: 'Dekat Lift Gedung B Lantai 2',      date: '2026-05-30', reporter: 'Dewi Lestari',   contact: '08765432100', photo: null, status: 'open', createdAt: Date.now()              },
-    { id: uid(), type: 'lost',  name: 'KTP dan SIM',                 category: 'dokumen',     desc: 'Dompet kecil berisi KTP atas nama Rizky Pratama, SIM C, dan kartu pelajar. Warna dompet merah.',                                                     location: 'Toilet Pria Gedung A Lantai 1',     date: '2026-05-26', reporter: 'Rizky Pratama',  contact: '08234567890', photo: null, status: 'open', createdAt: Date.now() - 86400000*4 },
-    { id: uid(), type: 'found', name: 'Kacamata Minus',              category: 'aksesoris',   desc: 'Kacamata dengan frame bulat warna hitam. Lensa minus. Ditemukan di meja perpustakaan lantai 4. Tanpa tempat kacamata.',                              location: 'Perpustakaan Lantai 4',             date: '2026-05-29', reporter: 'Nurul Hidayah',  contact: '08345678901', photo: null, status: 'open', createdAt: Date.now() - 3600000    },
+    { id: uid(), type: 'lost',  name: 'Dompet Kulit Coklat',          category: 'dompet/tas',  desc: 'Dompet kulit warna coklat tua, isi KTP, SIM A, kartu ATM BCA, dan uang tunai sekitar 200 ribu. Ada foto keluarga di dalamnya.',  location: 'Member Room Figure',                 date: '2026-05-28', reporter: 'Budi Santoso',   contact: '08123456789', photo: null, status: 'open', createdAt: Date.now() - 86400000*2 },
+    { id: uid(), type: 'found', name: 'Kunci Motor Honda Beat',       category: 'kunci',       desc: 'Satu kunci motor Honda Beat dengan gantungan kunci boneka beruang kecil warna biru.',                                          location: 'Waiting Area',                       date: '2026-05-29', reporter: 'Siti Rahayu',    contact: '08987654321', photo: null, status: 'open', createdAt: Date.now() - 86400000   },
+    { id: uid(), type: 'lost',  name: 'Handphone Samsung Galaxy A54', category: 'elektronik',  desc: 'HP Samsung Galaxy A54 warna hitam dengan case transparan. Layar sedikit retak di sudut kiri atas. Ada stiker kucing di belakang.', location: 'Multifunction Room / Off Ice Room',  date: '2026-05-27', reporter: 'Ahmad Fauzi',    contact: '08111222333', photo: null, status: 'open', createdAt: Date.now() - 86400000*3 },
+    { id: uid(), type: 'found', name: 'Handphone Samsung Warna Hitam',category: 'elektronik',  desc: 'HP Samsung warna hitam case bening. Ada stiker kucing di cover belakang. Layar ada retakan kecil di pojok.',                    location: 'Ice Rink Arena',                     date: '2026-05-27', reporter: 'Rini Agustina',  contact: '08556677889', photo: null, status: 'open', createdAt: Date.now() - 86400000*3 + 3600000 },
+    { id: uid(), type: 'lost',  name: 'Tas Ransel Hitam Eiger',       category: 'dompet/tas',  desc: 'Tas ransel warna hitam merek Eiger berisi laptop dan charger.',                                                                  location: 'Waiting Area',                       date: '2026-05-30', reporter: 'Farhan Hidayat', contact: '08998877665', photo: null, status: 'open', createdAt: Date.now() - 7200000 },
+    { id: uid(), type: 'found', name: 'Tas Ransel Hitam',             category: 'dompet/tas',  desc: 'Tas ransel warna hitam merek Eiger. Di dalamnya ada laptop dan charger.',                                                       location: 'Member Room Hockey',                 date: '2026-05-30', reporter: 'Dewi Lestari',   contact: '08765432100', photo: null, status: 'open', createdAt: Date.now()              },
+    { id: uid(), type: 'lost',  name: 'KTP dan SIM',                 category: 'lainnya',     desc: 'Dompet kecil berisi KTP atas nama Rizky Pratama, SIM C, dan kartu pelajar. Warna dompet merah.',                                                     location: 'Toilet',     date: '2026-05-26', reporter: 'Rizky Pratama',  contact: '08234567890', photo: null, status: 'open', createdAt: Date.now() - 86400000*4 },
+    { id: uid(), type: 'found', name: 'Kacamata Minus',              category: 'lainnya',     desc: 'Kacamata dengan frame bulat warna hitam. Lensa minus. Ditemukan di waiting area.',                                                                    location: 'Waiting Area',             date: '2026-05-29', reporter: 'Nurul Hidayah',  contact: '08345678901', photo: null, status: 'open', createdAt: Date.now() - 3600000    },
   ];
   saveItems(demos);
 }
@@ -370,7 +374,10 @@ function scoreItem(item, queryTokens) {
 function highlightText(text, matched) {
   if (!matched||!matched.length) return escapeHtml(text);
   let r = escapeHtml(text);
-  for (const t of matched) r = r.replace(new RegExp(`(${t})`,'gi'),'<span class="highlight">$1</span>');
+  for (const t of matched) {
+    const safe = t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // escape regex special chars
+    r = r.replace(new RegExp(`(${safe})`,'gi'),'<span class="highlight">$1</span>');
+  }
   return r;
 }
 
@@ -930,8 +937,6 @@ function openModal(id, matched) {
           letter-spacing:0.04em;">Tekan "Lihat Barang" untuk tampilan lengkap</span>
       </div>
     </div>` : '') : '';
-  const photoBtnHtml = '';
-
   // Claim section for found items
   const existingApproved = getClaims().find(c => c.itemId===id && c.status==='approved');
   const existingPending  = getClaims().find(c => c.itemId===id && c.status==='pending');
@@ -1106,10 +1111,14 @@ function openModal(id, matched) {
           <p class="mt-1 text-gray-700 leading-relaxed">${descHtml}</p></div>
         <div><span class="font-semibold text-gray-600">Lokasi:</span> ${escapeHtml(item.location)}</div>
         <div><span class="font-semibold text-gray-600">Tanggal:</span> ${formatDate(item.date)}</div>
+        ${currentUserRole === 'admin' ? `
         <div class="pt-2 border-t border-gray-100">
           <span class="font-semibold text-gray-600">Pelapor:</span> ${escapeHtml(item.reporter)}</div>
         <div><span class="font-semibold text-gray-600">Kontak:</span>
-          <span class="text-indigo-600">${escapeHtml(item.contact)}</span></div>
+          <span class="text-indigo-600">${escapeHtml(item.contact)}</span></div>` : `
+        <div class="pt-2 border-t border-gray-100 text-xs text-gray-400 flex items-center gap-1">
+          🔒 Pelapor & kontak hanya terlihat oleh admin
+        </div>`}
       </div>
       ${claimSection}
       ${matchSection}
@@ -2000,7 +2009,6 @@ function printTicket() { window.print(); }
 // ============================================================
 // ADMIN
 // ============================================================
-let adminLoggedIn      = false;
 let currentAdminTab    = 'lost';
 let currentClaimFilter = 'all';
 
@@ -2221,7 +2229,13 @@ function renderAdminItemList(type) {
     <div class="flex items-center gap-3 p-3 rounded-xl border border-gray-100 hover:bg-gray-50">
       <div class="flex-1 min-w-0">
         <div class="flex items-center gap-2 flex-wrap">
-          ${item.status==='resolved'?'<span class="badge-resolved px-2 py-0.5 rounded-full text-xs">Selesai</span>':'<span class="text-xs text-green-600 font-medium">● Aktif</span>'}
+          ${item.status==='resolved'
+            ? '<span class="badge-resolved px-2 py-0.5 rounded-full text-xs">Selesai</span>'
+            : item.status==='disposed' && item.disposalData?.type==='destroyed'
+            ? '<span class="badge-destroyed px-2 py-0.5 rounded-full text-xs">🔥 Dimusnahkan</span>'
+            : item.status==='disposed'
+            ? '<span class="badge-donated px-2 py-0.5 rounded-full text-xs">💙 Didonasikan</span>'
+            : '<span class="text-xs text-green-600 font-medium">● Aktif</span>'}
           <span class="text-xs text-gray-400">${formatDate(item.date)}</span>
         </div>
         <p class="font-medium text-gray-800 text-sm mt-0.5 truncate">${escapeHtml(item.name)}</p>
