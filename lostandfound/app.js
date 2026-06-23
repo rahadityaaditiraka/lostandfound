@@ -189,8 +189,18 @@ function applyRoleUI() {
   document.querySelectorAll('.btn-report-lost, .btn-report-found').forEach(btn =>
     btn.classList.toggle('hidden', !isUser));
 
-  // Tab Ajukan Klaim: hanya user & admin
+  // Tab Ajukan Klaim & Cek Status: hanya user & admin
   document.getElementById('tab-new')?.classList.toggle('hidden', !isUser);
+  document.getElementById('tab-track')?.classList.toggle('hidden', !isUser);
+
+  // Jika guest: sembunyikan tab container, tampilkan hanya prosedur klaim
+  const tabContainer = document.querySelector('#page-claim .flex.gap-2.mb-6');
+  if (tabContainer) tabContainer.classList.toggle('hidden', !isUser);
+
+  // Jika guest dan sedang di tab track: pindah ke guest guide
+  if (!isUser) {
+    document.getElementById('claim-tab-track')?.classList.add('hidden');
+  }
 
   // Prosedur klaim: hanya untuk guest
   document.getElementById('guest-claim-guide')?.classList.toggle('hidden', isUser);
@@ -1684,6 +1694,14 @@ let selectedItemId   = null;
 let currentClaimStep = 1;
 
 function initClaimPage() {
+  // Guest tidak bisa akses Cek Status maupun Ajukan Klaim
+  if (currentUserRole === 'guest') {
+    // Sembunyikan semua tab content
+    ['claim-tab-track','claim-tab-new','claim-tab-history'].forEach(id =>
+      document.getElementById(id)?.classList.add('hidden')
+    );
+    return;
+  }
   claimTab('track');
   document.getElementById('track-input').value = '';
   document.getElementById('track-results').innerHTML = '';
