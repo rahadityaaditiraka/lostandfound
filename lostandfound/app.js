@@ -371,7 +371,13 @@ function initFirebase() {
       localStorage.setItem('lf_items_cache', JSON.stringify(lite));
     } catch(e) { localStorage.removeItem('lf_items_cache'); }
     itemsOk = true;
-    if (_appReady) refreshCurrentPage();
+    if (_appReady) {
+      refreshCurrentPage();
+      // Sync ke Google Sheets setiap ada perubahan item
+      if (SHEETS_URL && !SHEETS_URL.startsWith('GANTI')) {
+        syncToSheets('syncItems', _items);
+      }
+    }
   }, err => console.error('items:', err));
 
   _db.collection('claims').onSnapshot(snap => {
