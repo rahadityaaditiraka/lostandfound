@@ -10,6 +10,39 @@ const FIREBASE_CONFIG = {
   appId:             "1:138580852129:web:b1eee4e4e875c395a31fe0"
 };
 
+// ============================================================
+// GOOGLE SHEETS SYNC
+// ============================================================
+// Ganti dengan URL deployment Apps Script Anda
+const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbyv76SvUoEeIE4Yi-zhEH30R49TUoaRnkEphUlo_SHGd_Lz9ufAmmxbs5b5jbu7O8grtA/exec';
+
+function syncToSheets(action, data) {
+  if (!SHEETS_URL || SHEETS_URL.startsWith('GANTI')) return;
+  // Strip foto dari data sebelum kirim (terlalu besar)
+  const payload = action === 'syncItems'
+    ? { action, items: data.map(i => ({
+        ...i,
+        hasPhoto: !!i.photo,
+        photo: null,
+        resolveData:  i.resolveData  ? { ...i.resolveData,  photo: null } : null,
+        disposalData: i.disposalData ? { ...i.disposalData, photo: null } : null
+      })) }
+    : { action, claims: data.map(c => ({
+        ...c,
+        hasClaimPhoto: !!c.claimantPhoto,
+        hasBuktiPhoto: !!c.buktiPhoto,
+        claimantPhoto: null,
+        buktiPhoto: null
+      })) };
+
+  fetch(SHEETS_URL, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  }).catch(() => {});
+}
+
 // Hirarki: guest < user < admin
 let _db           = null;
 let _items        = [];
@@ -44,7 +77,10 @@ function saveItems(newItems) {
       ops++;
     }
   }
-  if (ops > 0) batch.commit().catch(e => console.error('saveItems:', e));
+  if (ops > 0) {
+    batch.commit().catch(e => console.error('saveItems:', e));
+    syncToSheets('syncItems', newItems);
+  }
 }
 
 function saveClaims(newClaims) {
@@ -69,7 +105,10 @@ function saveClaims(newClaims) {
       ops++;
     }
   }
-  if (ops > 0) batch.commit().catch(e => console.error('saveClaims:', e));
+  if (ops > 0) {
+    batch.commit().catch(e => console.error('saveClaims:', e));
+    syncToSheets('syncClaims', newClaims);
+  }
 }
 
 // Kompresi foto — maks 600px, kualitas 0.55 → hasil ~50-150KB (aman untuk Firestore 1MB)
@@ -338,11 +377,17 @@ function initFirebase() {
   _db.collection('claims').onSnapshot(snap => {
     _claims = snap.docs.map(d => d.data());
     try {
-      const lite = _claims.map(c => ({...c, buktiPhoto: null, signature: null}));
+      const lite = _claims.map(c => ({...c, buktiPhoto: null, claimantPhoto: null}));
       localStorage.setItem('lf_claims_cache', JSON.stringify(lite));
     } catch(e) { localStorage.removeItem('lf_claims_cache'); }
     claimsOk = true;
-    if (_appReady) refreshCurrentPage();
+    if (_appReady) {
+      refreshCurrentPage();
+      // Sync ke Google Sheets setiap ada perubahan di Firestore
+      if (SHEETS_URL && !SHEETS_URL.startsWith('GANTI')) {
+        syncToSheets('syncClaims', _claims);
+      }
+    }
   }, err => console.error('claims:', err));
 }
 
@@ -444,7 +489,7 @@ function showPage(page) {
   if (page==='lost')     renderItemPage('lost');
   if (page==='found')    renderItemPage('found');
   if (page==='all')      initAllPage();
-  if (page==='claim')    initClaimPage();
+  if (page==='claim')    { applyRoleUI(); initClaimPage(); }
   if (page==='admin')    renderAdmin();
   if (page==='disposal') renderDisposalPage();
 }
@@ -631,8 +676,13 @@ function _renderItemPage(type, page) {
   const statusF  = document.getElementById(`${type}-status-filter`).value;
 
   let items = getItems().filter(i => i.type === type);
+  // Default: hanya tampilkan barang yang masih aktif (open)
+  if (statusF) {
+    items = items.filter(i => i.status === statusF);
+  } else {
+    items = items.filter(i => i.status === 'open');
+  }
   if (category) items = items.filter(i => i.category === category);
-  if (statusF)  items = items.filter(i => i.status === statusF);
 
   const queryTokens = tokenize(query);
   const hint = document.getElementById(`${type}-hint`);
@@ -713,8 +763,7 @@ function renderCard(item, score, matched, showScore) {
   else if (item.status==='resolved' && item.matchedWith)
                                       statusBadge = '<span class="badge-matched px-2 py-0.5 rounded-full text-xs font-semibold ml-1">🔗 Dicocokkan</span>';
   else if (item.status==='resolved')  statusBadge = '<span class="badge-resolved px-2 py-0.5 rounded-full text-xs font-semibold ml-1">Selesai</span>';
-  else if (claimStatus==='approved')  statusBadge = '<span class="badge-approved px-2 py-0.5 rounded-full text-xs font-semibold ml-1">Dijadwalkan</span>';
-  else if (claimStatus==='pending')   statusBadge = '<span class="badge-pending  px-2 py-0.5 rounded-full text-xs font-semibold ml-1">Ada Klaim</span>';
+  else if (claimStatus==='completed') statusBadge = '<span class="badge-completed px-2 py-0.5 rounded-full text-xs font-semibold ml-1">Diklaim</span>';
 
   const scorePct   = Math.round(score * 100);
   const scoreColor = scorePct>=70 ? '#22c55e' : scorePct>=40 ? '#f59e0b' : '#6366f1';
@@ -942,11 +991,10 @@ function confirmMatch(lostId, foundId) {
 }
 
 function getItemClaimStatus(itemId) {
-  const claims = getClaims().filter(c => c.itemId===itemId && c.status!=='rejected');
+  const claims = getClaims().filter(c => c.itemId===itemId);
   if (!claims.length) return null;
-  if (claims.some(c => c.status==='approved'))  return 'approved';
   if (claims.some(c => c.status==='completed')) return 'completed';
-  return 'pending';
+  return null;
 }
 
 // ============================================================
@@ -978,22 +1026,14 @@ function openModal(id, matched) {
           letter-spacing:0.04em;">Tekan "Lihat Barang" untuk tampilan lengkap</span>
       </div>
     </div>` : '') : '';
-  // Claim section for found items
-  const existingApproved = getClaims().find(c => c.itemId===id && c.status==='approved');
-  const existingPending  = getClaims().find(c => c.itemId===id && c.status==='pending');
+  // Claim section for found items — no admin verification needed
+  const existingClaim = getClaims().find(c => c.itemId===id && c.status==='completed');
   let claimSection = '';
-  if (!isLost && item.status !== 'resolved') {
-    if (existingApproved) {
+  if (!isLost && item.status !== 'resolved' && currentUserRole !== 'guest') {
+    if (existingClaim) {
       claimSection = `
-        <div class="mt-4 bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-700">
-          <p class="font-semibold mb-1">📅 Pengambilan Terjadwal</p>
-          <p>Tanggal: <b>${formatDate(existingApproved.pickupDate)}</b> · Waktu: <b>${existingApproved.pickupTime}</b></p>
-          <p>Lokasi: <b>${escapeHtml(existingApproved.pickupLocation||'-')}</b></p>
-        </div>`;
-    } else if (existingPending) {
-      claimSection = `
-        <div class="mt-4 bg-yellow-50 border border-yellow-200 rounded-xl p-3 text-sm text-yellow-700">
-          ⏳ Ada klaim yang sedang menunggu verifikasi admin.
+        <div class="mt-4 bg-green-50 border border-green-200 rounded-xl p-3 text-sm text-green-700">
+          ✅ Barang ini sudah diklaim oleh <b>${escapeHtml(existingClaim.claimantName)}</b>.
         </div>`;
     } else {
       claimSection = `
@@ -1170,7 +1210,7 @@ function openModal(id, matched) {
           class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 rounded-xl text-sm font-semibold transition">
           🖼️ Lihat Barang
         </button>` : ''}
-        ${item.status !== 'resolved' && adminLoggedIn ? `
+        ${item.status !== 'resolved' && currentUserRole !== 'guest' ? `
         <button onclick="markResolved('${id}')"
           class="flex-1 bg-green-600 hover:bg-green-700 text-white py-2.5 rounded-xl text-sm font-semibold transition">
           ✅ Tandai Selesai
@@ -1290,7 +1330,16 @@ function closeModal(e) {
 }
 
 function markResolved(id) {
-  openVerifyModal(id);
+  if (!confirm('Tandai laporan ini sebagai selesai?')) return;
+  const items = getItems();
+  const idx   = items.findIndex(i => i.id === id);
+  if (idx === -1) return;
+  items[idx].status = 'resolved';
+  saveItems(items);
+  closeModal();
+  showToast('✅ Laporan berhasil diselesaikan!', 'bg-green-600');
+  renderItemPage('lost'); renderItemPage('found'); renderAll();
+  if (adminLoggedIn) renderAdmin();
 }
 
 // ============================================================
@@ -1371,8 +1420,9 @@ function proceedVerify() {
   document.getElementById('verify-modal-overlay').classList.add('hidden');
 
   if (val === 'found') {
-    // Buka form data pengambilan + bukti foto
-    openResolveModal(itemId);
+    // Tandai selesai langsung
+    markResolved(itemId);
+    return;
 
   } else if (val === 'match') {
     // Tutup modal utama, scroll ke bagian match di detail item
@@ -1405,106 +1455,6 @@ function proceedVerify() {
   }
 }
 
-// ============================================================
-// RESOLVE MODAL — Selesaikan Laporan dengan Bukti
-// ============================================================
-let resolvePhotoData = null;
-
-function openResolveModal(itemId) {
-  resolvePhotoData = null;
-  const item = getItems().find(i => i.id === itemId);
-  if (!item) return;
-
-  document.getElementById('resolve-item-id').value = itemId;
-  document.getElementById('resolve-nama').value       = '';
-  document.getElementById('resolve-kontak').value     = '';
-  document.getElementById('resolve-petugas').value    = '';
-  document.getElementById('resolve-lokasi').value     = '';
-  document.getElementById('resolve-keterangan').value = '';
-  document.getElementById('resolve-tgl').value        = new Date().toISOString().slice(0,10);
-  document.getElementById('resolve-photo-input').value = '';
-  document.getElementById('resolve-drop-ph').classList.remove('hidden');
-  document.getElementById('resolve-preview').classList.add('hidden');
-  document.getElementById('resolve-preview-img').src = '';
-
-  const typeLabel = item.type === 'lost' ? '🚨 Barang Hilang' : '✅ Barang Ditemukan';
-  document.getElementById('resolve-item-info').innerHTML = `
-    <div class="flex items-center gap-2 mb-1">
-      <span class="${item.type==='lost'?'badge-lost':'badge-found'} px-2 py-0.5 rounded-full text-xs font-semibold">${typeLabel}</span>
-    </div>
-    <p class="font-bold text-gray-800">${escapeHtml(item.name)}</p>
-    <p class="text-xs text-gray-500 mt-0.5">📍 ${escapeHtml(item.location)} · 🗓️ ${formatDate(item.date)}</p>
-    <p class="text-xs text-gray-500">Pelapor: ${escapeHtml(item.reporter)}</p>`;
-
-  document.getElementById('resolve-modal-overlay').classList.remove('hidden');
-}
-
-function closeResolveModal(e) {
-  if (e && e.target !== document.getElementById('resolve-modal-overlay')) return;
-  document.getElementById('resolve-modal-overlay').classList.add('hidden');
-}
-
-function handleResolveFile(file) {
-  if (!file || !isValidImage(file)) { showToast('Format tidak didukung. Gunakan JPG atau PNG.','bg-red-500'); return; }
-  if (file.size > 5 * 1024 * 1024) { showToast('Foto terlalu besar (maks 5 MB)', 'bg-red-500'); return; }
-  const reader = new FileReader();
-  reader.onload = async e => {
-    resolvePhotoData = await compressPhoto(e.target.result);
-    document.getElementById('resolve-preview-img').src = resolvePhotoData;
-    document.getElementById('resolve-drop-ph').classList.add('hidden');
-    document.getElementById('resolve-preview').classList.remove('hidden');
-  };
-  reader.readAsDataURL(file);
-}
-
-function handleResolveDrop(e) {
-  e.preventDefault();
-  document.getElementById('resolve-dropzone').classList.remove('border-indigo-400','bg-indigo-50');
-  const file = e.dataTransfer.files[0];
-  if (file) handleResolveFile(file);
-}
-
-function removeResolvePhoto(e) {
-  e.stopPropagation();
-  resolvePhotoData = null;
-  document.getElementById('resolve-preview-img').src = '';
-  document.getElementById('resolve-preview').classList.add('hidden');
-  document.getElementById('resolve-drop-ph').classList.remove('hidden');
-  document.getElementById('resolve-photo-input').value = '';
-}
-
-function submitResolve() {
-  const nama    = document.getElementById('resolve-nama').value.trim();
-  const kontak  = document.getElementById('resolve-kontak').value.trim();
-  const tgl     = document.getElementById('resolve-tgl').value;
-  const petugas = document.getElementById('resolve-petugas').value.trim();
-  const lokasi  = document.getElementById('resolve-lokasi').value.trim();
-  const ket     = document.getElementById('resolve-keterangan').value.trim();
-
-  if (!nama)    { showToast('Nama pengambil wajib diisi','bg-red-500'); return; }
-  if (!kontak)  { showToast('No. identitas / kontak wajib diisi','bg-red-500'); return; }
-  if (!tgl)     { showToast('Tanggal pengambilan wajib diisi','bg-red-500'); return; }
-  if (!petugas) { showToast('Nama petugas wajib diisi','bg-red-500'); return; }
-  if (!lokasi)  { showToast('Lokasi serah terima wajib diisi','bg-red-500'); return; }
-  if (!resolvePhotoData) { showToast('Foto bukti pengambilan wajib diupload','bg-red-500'); return; }
-
-  const itemId = document.getElementById('resolve-item-id').value;
-  const items  = getItems();
-  const idx    = items.findIndex(i => i.id === itemId);
-  if (idx === -1) return;
-
-  items[idx].status      = 'resolved';
-  items[idx].resolveData = { nama, kontak, tgl, petugas, lokasi, keterangan: ket, photo: resolvePhotoData, resolvedAt: Date.now() };
-  saveItems(items);
-
-  document.getElementById('resolve-modal-overlay').classList.add('hidden');
-  closeModal();
-  showToast('✅ Laporan berhasil diselesaikan!', 'bg-green-600');
-  renderItemPage('lost');
-  renderItemPage('found');
-  renderAll();
-  if (adminLoggedIn) renderAdmin();
-}
 
 // ============================================================
 // REPORT MODAL
@@ -1719,6 +1669,39 @@ const SIG = {
 function clearSignature() { SIG.clear(); }
 
 // ============================================================
+// CLAIM PHOTO UPLOAD
+// ============================================================
+let claimPhotoData = null;
+
+function handleClaimPhotoFile(file) {
+  if (!file || !isValidImage(file)) { showToast('Format tidak didukung. Gunakan JPG atau PNG.','bg-red-500'); return; }
+  if (file.size > 5 * 1024 * 1024) { showToast('Foto terlalu besar (maks 5 MB)','bg-red-500'); return; }
+  const reader = new FileReader();
+  reader.onload = async e => {
+    claimPhotoData = await compressPhoto(e.target.result);
+    document.getElementById('claim-photo-preview-img').src = claimPhotoData;
+    document.getElementById('claim-photo-placeholder').classList.add('hidden');
+    document.getElementById('claim-photo-preview').classList.remove('hidden');
+  };
+  reader.readAsDataURL(file);
+}
+
+function handleClaimPhotoDrop(e) {
+  e.preventDefault();
+  document.getElementById('claim-photo-dropzone').classList.remove('border-indigo-400','bg-indigo-50');
+  handleClaimPhotoFile(e.dataTransfer.files[0]);
+}
+
+function removeClaimPhoto(e) {
+  e.stopPropagation();
+  claimPhotoData = null;
+  document.getElementById('claim-photo-preview-img').src = '';
+  document.getElementById('claim-photo-preview').classList.add('hidden');
+  document.getElementById('claim-photo-placeholder').classList.remove('hidden');
+  document.getElementById('claim-photo-input').value = '';
+}
+
+// ============================================================
 // CLAIM PAGE
 // ============================================================
 let selectedItemId   = null;
@@ -1770,7 +1753,14 @@ function initClaimForm() {
   document.getElementById('claim-time').value = '';
   renderClaimItemList('');
   updateClaimSelectedPreview();
-  setTimeout(() => SIG.init(), 50);
+  // Reset foto pengambil
+  claimPhotoData = null;
+  const img = document.getElementById('claim-photo-preview-img');
+  if (img) img.src = '';
+  document.getElementById('claim-photo-preview')?.classList.add('hidden');
+  document.getElementById('claim-photo-placeholder')?.classList.remove('hidden');
+  const inp = document.getElementById('claim-photo-input');
+  if (inp) inp.value = '';
 }
 
 function filterClaimItems() {
@@ -1860,7 +1850,7 @@ function claimNextStep(from) {
     const officer = document.getElementById('claim-officer').value.trim();
     if (!name||!contact||!proof) { showToast('Isi semua field wajib.','bg-red-500'); return; }
     if (!officer) { showToast('Nama petugas wajib diisi.','bg-red-500'); return; }
-    if (SIG.isEmpty) { showToast('Tanda tangan wajib diisi.','bg-red-500'); return; }
+    if (!claimPhotoData) { showToast('Foto pengambil wajib diupload.','bg-red-500'); return; }
     gotoClaimStep(3);
   }
 }
@@ -1878,16 +1868,34 @@ function submitClaim() {
     claimantContact: document.getElementById('claim-contact').value.trim(),
     claimantOfficer: document.getElementById('claim-officer').value.trim(),
     proofDesc:       document.getElementById('claim-proof').value.trim(),
-    signature:       SIG.toDataURL(),
+    claimantPhoto:   claimPhotoData,
     preferredDate: date, preferredTime: time,
     note: document.getElementById('claim-note').value.trim(),
-    status: 'pending',
-    pickupDate:null, pickupTime:null, pickupLocation:null, pickupOfficer:null, verificationCode:null,
+    status: 'completed',
+    completedAt: Date.now(),
+    pickupDate: date, pickupTime: time,
+    pickupLocation: '-', pickupOfficer: document.getElementById('claim-officer').value.trim(),
+    verificationCode: genTicketCode(),
     adminNote: '', createdAt: Date.now(),
   };
   const claims = getClaims(); claims.push(claim); saveClaims(claims);
-  SIG.clear();
-  showToast('Klaim berhasil dikirim! Tunggu konfirmasi admin.','bg-green-600');
+
+  // Tandai item sebagai resolved otomatis — clone dulu agar saveItems mendeteksi perubahan
+  const items = getItems().map(i => ({...i}));
+  const idx   = items.findIndex(i => i.id === selectedItemId);
+  if (idx !== -1) {
+    items[idx] = { ...items[idx], status: 'resolved' };
+    saveItems(items);
+  }
+  renderItemPage('found');
+  renderItemPage('lost');
+
+  claimPhotoData = null;
+  document.getElementById('claim-photo-preview-img').src = '';
+  document.getElementById('claim-photo-preview').classList.add('hidden');
+  document.getElementById('claim-photo-placeholder').classList.remove('hidden');
+  document.getElementById('claim-photo-input').value = '';
+  showToast('✅ Klaim berhasil! Barang ditandai sudah diambil.','bg-green-600');
   claimTab('track');
   document.getElementById('track-input').value = claim.claimantContact;
   trackClaim();
@@ -1900,13 +1908,17 @@ function openClaimFromModal(itemId) {
   renderClaimItemList('');
   updateClaimSelectedPreview();
   gotoClaimStep(2);
-  setTimeout(() => SIG.init(), 80);
 }
 
 // ============================================================
 // TRACK CLAIM
 // ============================================================
 function trackClaim() {
+  if (currentUserRole === 'guest') {
+    showToast('Silakan login untuk cek status klaim', 'bg-red-500');
+    openAuthModal();
+    return;
+  }
   const query = document.getElementById('track-input').value.trim().toLowerCase();
   if (!query) { showToast('Masukkan nomor klaim atau kontak.','bg-red-500'); return; }
 
@@ -1963,10 +1975,10 @@ function renderTrackCard(claim, item) {
       <p>${escapeHtml(claim.adminNote)}</p>
     </div>` : '';
 
-  const sigSection = claim.signature ? `
+  const sigSection = claim.claimantPhoto ? `
     <details class="mt-3 text-xs">
-      <summary class="cursor-pointer text-gray-400 hover:text-gray-600 select-none">Lihat tanda tangan</summary>
-      <div class="sig-display mt-1"><img src="${claim.signature}" alt="tanda tangan" /></div>
+      <summary class="cursor-pointer text-gray-400 hover:text-gray-600 select-none">📷 Lihat bukti pengambilan</summary>
+      <img src="${claim.claimantPhoto}" class="mt-2 w-full max-h-64 rounded-xl object-contain border border-gray-200 mx-auto block" alt="bukti pengambilan" />
     </details>` : '';
 
   return `
@@ -1985,6 +1997,15 @@ function renderTrackCard(claim, item) {
           <img src="${claim.buktiPhoto}" alt="bukti" class="max-h-40 rounded-lg object-contain mx-auto block border border-green-100" />
           ${claim.buktiCatatan ? `<p class="text-xs text-green-700 mt-1.5">📝 ${escapeHtml(claim.buktiCatatan)}</p>` : ''}
           <p class="text-xs text-gray-400 mt-1">✅ Diselesaikan ${formatDateTime(claim.completedAt||Date.now())}</p>
+        </div>` : ''}
+      ${claim.status === 'approved' && currentUserRole !== 'guest' ? `
+        <div class="mt-3 border border-indigo-200 bg-indigo-50 rounded-xl p-3">
+          <p class="text-xs font-semibold text-indigo-700 mb-2">📋 Konfirmasi Serah Terima</p>
+          <p class="text-xs text-indigo-500 mb-3">Barang sudah diserahkan? Upload foto bukti dan isi catatan serah terima.</p>
+          <button onclick="openBuktiModal('${claim.id}')"
+            class="w-full bg-green-600 hover:bg-green-700 text-white text-xs font-semibold py-2.5 rounded-xl transition">
+            📸 Upload Bukti Serah Terima
+          </button>
         </div>` : ''}
       <div class="mt-4">${buildTimeline(claim)}</div>
     </div>`;
@@ -2033,10 +2054,10 @@ function showTicket(claimId) {
       <div class="flex justify-between"><span class="text-gray-500">Lokasi</span><span class="font-semibold text-right max-w-[60%]">${escapeHtml(claim.pickupLocation||'-')}</span></div>
       <div class="flex justify-between"><span class="text-gray-500">Petugas</span><span class="font-semibold">${escapeHtml(claim.pickupOfficer||'-')}</span></div>
       <div class="border-t border-dashed border-gray-300 my-1"></div>
-      ${claim.signature?`
+      ${claim.claimantPhoto?`
       <div class="py-1">
-        <p class="text-xs text-gray-500 mb-1 text-center">Tanda Tangan Pengklaim</p>
-        <div class="sig-display"><img src="${claim.signature}" alt="tanda tangan" /></div>
+        <p class="text-xs text-gray-500 mb-1 text-center">Foto Pengambil</p>
+        <div class="sig-display"><img src="${claim.claimantPhoto}" alt="tanda tangan" /></div>
       </div>
       <div class="border-t border-dashed border-gray-300 my-1"></div>`:''}
       <div class="text-center py-2">
@@ -2357,10 +2378,10 @@ function renderAdminClaims(f) {
         <p>🔑 <b>${claim.verificationCode}</b></p>
       </div>` : '';
 
-    const sigSection = claim.signature ? `
+    const sigSection = claim.claimantPhoto ? `
       <div class="mt-2 pt-2 border-t border-gray-100">
-        <p class="text-xs font-semibold text-gray-600 mb-1">Tanda Tangan Digital:</p>
-        <div class="sig-display"><img src="${claim.signature}" alt="tanda tangan" /></div>
+        <p class="text-xs font-semibold text-gray-600 mb-1">Foto Pengambil:</p>
+        <div class="sig-display"><img src="${claim.claimantPhoto}" alt="tanda tangan" /></div>
       </div>` : '';
 
     return `
@@ -2709,10 +2730,10 @@ function renderPickupHistory() {
         <span>📷</span><span>Tidak ada foto bukti</span>
       </div>`;
 
-    const sigSection = r.signature ? `
+    const sigSection = r.claimantPhoto ? `
       <div>
-        <p class="text-xs font-semibold text-gray-500 mb-1">✍️ Tanda Tangan</p>
-        <div class="sig-display"><img src="${r.signature}" alt="ttd" /></div>
+        <p class="text-xs font-semibold text-gray-500 mb-1">📷 Foto Pengambil</p>
+        <div class="sig-display"><img src="${r.claimantPhoto}" alt="ttd" /></div>
       </div>` : '';
 
     const verSection = r.verCode ? `
