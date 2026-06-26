@@ -22,7 +22,7 @@
         <button onclick="showPage('lost')"  id="nav-lost"
           class="nav-btn px-3 py-2 rounded-lg text-sm font-medium transition">🚨 Barang Hilang</button>
         <button onclick="showPage('found')" id="nav-found"
-          class="nav-btn px-3 py-2 rounded-lg text-sm font-medium transition">✅ Barang Ditemukan</button>
+          class="nav-btn px-3 py-2 rounded-lg text-sm font-medium transition">✅ Barang Temuan</button>
         <button onclick="showPage('all')" id="nav-all"
           class="nav-btn px-3 py-2 rounded-lg text-sm font-medium transition hidden">📋 Semua Laporan</button>
         <button onclick="showPage('claim')" id="nav-claim"
@@ -70,7 +70,7 @@
         <button onclick="showPage('lost');closeMobileMenu()"  id="mnav-lost"
           class="nav-btn px-3 py-2.5 rounded-lg text-sm font-medium text-left transition">🚨 Barang Hilang</button>
         <button onclick="showPage('found');closeMobileMenu()" id="mnav-found"
-          class="nav-btn px-3 py-2.5 rounded-lg text-sm font-medium text-left transition">✅ Barang Ditemukan</button>
+          class="nav-btn px-3 py-2.5 rounded-lg text-sm font-medium text-left transition">✅ Barang Temuan</button>
         <button onclick="showPage('all');closeMobileMenu()"   id="mnav-all"
           class="nav-btn px-3 py-2.5 rounded-lg text-sm font-medium text-left transition hidden">📋 Semua Laporan</button>
         <button onclick="showPage('claim');closeMobileMenu()" id="mnav-claim"
@@ -174,7 +174,7 @@
         <!-- Hijau: Barang Ditemukan -->
         <div class="hero-found rounded-2xl text-white p-6 flex items-center justify-between flex-1" style="box-shadow:0 8px 24px rgba(22,163,74,0.3)">
           <div>
-            <h1 class="text-2xl font-bold mb-1">✅ Barang Ditemukan</h1>
+            <h1 class="text-2xl font-bold mb-1">✅ Barang Temuan</h1>
             <p class="text-green-100 text-sm">Daftar barang yang ditemukan dan menunggu pemiliknya.</p>
             <div id="found-stat" class="text-green-100 text-xs mt-2"></div>
           </div>
@@ -329,7 +329,7 @@
               <div class="w-8 h-8 bg-indigo-600 text-white rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0">1</div>
               <div>
                 <p class="font-semibold text-gray-800 text-sm">Cek daftar barang ditemukan</p>
-                <p class="text-gray-500 text-xs mt-0.5">Buka menu <b>✅ Barang Ditemukan</b> dan cari barang Anda menggunakan kolom pencarian. Jika barang Anda ada, lanjut ke langkah berikutnya.</p>
+                <p class="text-gray-500 text-xs mt-0.5">Buka menu <b>✅ Barang Temuan</b> dan cari barang Anda menggunakan kolom pencarian. Jika barang Anda ada, lanjut ke langkah berikutnya.</p>
               </div>
             </div>
 
@@ -763,7 +763,7 @@
             <button onclick="adminTab('lost')"  id="atab-lost"
               class="admin-tab px-4 py-2 rounded-xl text-sm font-semibold border transition">🚨 Barang Hilang</button>
             <button onclick="adminTab('found')" id="atab-found"
-              class="admin-tab px-4 py-2 rounded-xl text-sm font-semibold border transition">✅ Barang Ditemukan</button>
+              class="admin-tab px-4 py-2 rounded-xl text-sm font-semibold border transition">✅ Barang Temuan</button>
             <button onclick="adminTab('claims')" id="atab-claims"
               class="admin-tab px-4 py-2 rounded-xl text-sm font-semibold border transition">
               📋 Klaim & Pengambilan
@@ -966,8 +966,8 @@
               class="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" />
           </div>
           <div class="mb-4">
-            <label class="block text-sm font-semibold text-gray-700 mb-1">Kontak (WA) *</label>
-            <input type="tel" id="reporter-contact" placeholder="08xxxxxxxxxx" required
+            <label id="contact-label" class="block text-sm font-semibold text-gray-700 mb-1">Kontak (WA) *</label>
+            <input type="tel" id="reporter-contact" placeholder="08xxxxxxxxxx"
               inputmode="numeric" pattern="[0-9]*"
               oninput="this.value=this.value.replace(/[^0-9]/g,'')"
               class="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" />

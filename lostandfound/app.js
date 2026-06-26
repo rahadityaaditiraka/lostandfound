@@ -1477,6 +1477,14 @@ function openReportModal(type) {
     `w-full font-semibold py-3 rounded-xl transition text-sm text-white ${accent}`;
   document.getElementById('item-date').valueAsDate = new Date();
 
+  // Kontak wajib untuk Barang Hilang, opsional untuk Barang Temuan
+  const contactInput = document.getElementById('reporter-contact');
+  const contactLabel = document.getElementById('contact-label');
+  if (contactInput) contactInput.required = isLost;
+  if (contactLabel) contactLabel.innerHTML = isLost
+    ? 'Kontak (WA) <span class="text-red-500">*</span>'
+    : 'Kontak (WA) <span class="text-gray-400 font-normal">(opsional)</span>';
+
   // Ubah label Nama Pelapor / Nama Penemu sesuai tipe
   const reporterLabel = document.querySelector('label[for="reporter-name"], label:has(+ #reporter-name)');
   const reporterInput = document.getElementById('reporter-name');
