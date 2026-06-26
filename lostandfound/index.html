@@ -19,10 +19,10 @@
       </div>
       <!-- Desktop nav -->
       <div class="hidden md:flex gap-1 flex-wrap justify-end items-center">
-        <button onclick="showPage('lost')"  id="nav-lost"
-          class="nav-btn px-3 py-2 rounded-lg text-sm font-medium transition">🚨 Barang Hilang</button>
         <button onclick="showPage('found')" id="nav-found"
           class="nav-btn px-3 py-2 rounded-lg text-sm font-medium transition">✅ Barang Temuan</button>
+        <button onclick="showPage('lost')"  id="nav-lost"
+          class="nav-btn px-3 py-2 rounded-lg text-sm font-medium transition">🚨 Barang Hilang</button>
         <button onclick="showPage('all')" id="nav-all"
           class="nav-btn px-3 py-2 rounded-lg text-sm font-medium transition hidden">📋 Semua Laporan</button>
         <button onclick="showPage('claim')" id="nav-claim"
@@ -67,10 +67,10 @@
     <!-- Mobile menu dropdown -->
     <div id="mobile-menu" class="hidden md:hidden border-t border-white/10">
       <div class="px-4 py-3 flex flex-col gap-1">
-        <button onclick="showPage('lost');closeMobileMenu()"  id="mnav-lost"
-          class="nav-btn px-3 py-2.5 rounded-lg text-sm font-medium text-left transition">🚨 Barang Hilang</button>
         <button onclick="showPage('found');closeMobileMenu()" id="mnav-found"
           class="nav-btn px-3 py-2.5 rounded-lg text-sm font-medium text-left transition">✅ Barang Temuan</button>
+        <button onclick="showPage('lost');closeMobileMenu()"  id="mnav-lost"
+          class="nav-btn px-3 py-2.5 rounded-lg text-sm font-medium text-left transition">🚨 Barang Hilang</button>
         <button onclick="showPage('all');closeMobileMenu()"   id="mnav-all"
           class="nav-btn px-3 py-2.5 rounded-lg text-sm font-medium text-left transition hidden">📋 Semua Laporan</button>
         <button onclick="showPage('claim');closeMobileMenu()" id="mnav-claim"
@@ -113,7 +113,7 @@
               <p class="text-gray-400 text-xs">Senin – Minggu · 10.00 – 17.00 WIB</p>
             </div>
           </div>
-          <p class="text-gray-500 text-xs mb-3">Jika Anda menemukan barang, segera laporkan kepada petugas kami!</p>
+          <p class="text-gray-500 text-xs mb-3">Jika Barang anda tertinggal atau hilang, segera laporkan kepada petugas kami!</p>
           <div class="flex flex-col gap-2">
             <a href="tel:+6281234567890"
               class="inline-flex items-center justify-center gap-1.5 border border-gray-200 hover:bg-gray-50 text-gray-700 text-xs font-semibold px-3 py-2 rounded-xl transition">
@@ -175,7 +175,7 @@
         <div class="hero-found rounded-2xl text-white p-6 flex items-center justify-between flex-1" style="box-shadow:0 8px 24px rgba(22,163,74,0.3)">
           <div>
             <h1 class="text-2xl font-bold mb-1">✅ Barang Temuan</h1>
-            <p class="text-green-100 text-sm">Daftar barang yang ditemukan dan menunggu pemiliknya.</p>
+            <p class="text-green-100 text-sm">Daftar barang yang ditemukan di Area BXRink Arena dan menunggu pemiliknya.</p>
             <div id="found-stat" class="text-green-100 text-xs mt-2"></div>
           </div>
           <button onclick="requireLogin(()=>openReportModal('found'))"
